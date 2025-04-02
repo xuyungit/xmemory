@@ -1,6 +1,37 @@
 # XMemory
 
-A modern Python project with FastAPI backend and modern frontend.
+XMemory is a modern, AI-powered personal memory management system that helps users store, organize, and retrieve their memories, insights, and knowledge effectively. The system combines traditional text search with advanced vector embeddings to provide highly accurate and contextual memory retrieval.
+
+## Key Features
+- Versatile Memory Types
+- Raw memories
+- Insights
+- Project memories
+- Tasks
+- Time-based records (Daily, Weekly, Monthly, Quarterly, Yearly)
+- Archived memories
+
+## Advanced Search Capabilities
+- Semantic search using vector embeddings
+- Traditional text-based search
+- Hybrid search combining both approaches
+- Tag-based filtering
+- User-specific memory isolation
+
+## Smart Memory Organization
+- Hierarchical memory structure with parent-child relationships
+- Related memory linking
+- Automatic content embedding using AI
+- Tagging system for easy categorization
+- Memory type classification
+- Rich Memory Structure
+
+## Title for quick identification
+- Content for detailed information
+- Summary for quick preview
+- Tags for categorization
+- Timestamps for tracking
+- Vector embeddings for semantic search
 
 ## Prerequisites
 
