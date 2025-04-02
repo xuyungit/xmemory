@@ -1,9 +1,10 @@
+import logging
 import os
 from typing import List, Optional
 from openai import OpenAI
 from app.core.config import settings
 from app.db.elasticsearch.repository import ElasticsearchRepository
-from app.db.elasticsearch.models import MemoryDocument, MEMORY_DOCUMENT_MAPPING
+from app.db.elasticsearch.models import MemoryDocument, MEMORY_DOCUMENT_MAPPING, MemoryType
 from app.llm.embeddings import embed_text
 
 class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
@@ -98,6 +99,7 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
             query["_source"] = {"excludes": ["embedding"]}
 
         results = await self.search(query, size=size)
+        logging.info(f"Search results: {results}")
         return [MemoryDocument.from_dict(doc) for doc in results]
 
     async def hybrid_search(
@@ -150,4 +152,58 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
 
     async def delete_memory(self, id: str) -> bool:
         """Delete a memory document."""
-        return await self.delete_document(id) 
+        return await self.delete_document(id)
+
+    async def list_memories(
+        self,
+        memory_type: Optional[MemoryType] = None,
+        user_id: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 10,
+        sort_by: str = "created_at",
+        sort_order: str = "desc"
+    ) -> tuple[List[MemoryDocument], int]:
+        """
+        List memories with pagination and sorting.
+        
+        Args:
+            memory_type: Filter by memory type
+            user_id: Filter by user ID
+            page: Page number (1-based)
+            page_size: Number of items per page
+            sort_by: Field to sort by (default: created_at)
+            sort_order: Sort order (asc or desc)
+            
+        Returns:
+            Tuple of (list of memories, total count)
+        """
+        query = {"bool": {"must": []}}
+        
+        if memory_type:
+            query["bool"]["must"].append({"term": {"memory_type": memory_type}})
+            
+        if user_id:
+            query["bool"]["must"].append({"term": {"user_id": user_id}})
+            
+        # If no filters, match all documents
+        if not query["bool"]["must"]:
+            query = {"match_all": {}}
+            
+        # Calculate from/size for pagination
+        from_ = (page - 1) * page_size
+        
+        # Build sort clause
+        sort_clause = [{sort_by: {"order": sort_order}}]
+        
+        # Execute search
+        results = await self.search(
+            query=query,
+            from_=from_,
+            size=page_size,
+            sort=sort_clause
+        )
+        
+        # Get total count
+        count = await self.count(query)
+        
+        return [MemoryDocument.from_dict(doc) for doc in results], count 

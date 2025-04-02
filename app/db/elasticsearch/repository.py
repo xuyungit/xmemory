@@ -66,13 +66,19 @@ class ElasticsearchRepository(Generic[T]):
         try:
             print(f"Getting document with ID {id} from {self.index_name}")
             result = await es.get(index=self.index_name, id=id)
-            print(f"Successfully retrieved document: {result}")
+            # print(f"Successfully retrieved document: {result}")
             return result['_source']
         except Exception as e:
             print(f"Error getting document {id}: {str(e)}")
             return None
 
-    async def search(self, query: Dict[str, Any], size: int = 10) -> List[Dict[str, Any]]:
+    async def search(
+        self, 
+        query: Dict[str, Any], 
+        size: int = 10,
+        from_: int = 0,
+        sort: Optional[List[Dict[str, Any]]] = None
+    ) -> List[Dict[str, Any]]:
         """Search for documents using the specified query."""
         es = await self.es
         try:
@@ -83,17 +89,38 @@ class ElasticsearchRepository(Generic[T]):
                     body=query
                 )
             else:
+                search_body = {
+                    "query": query,
+                    "size": size,
+                    "from": from_
+                }
+                if sort:
+                    search_body["sort"] = sort
+                    
                 result = await es.search(
                     index=self.index_name,
-                    query=query,
-                    size=size
+                    body=search_body
                 )
             return [{
                 **hit['_source'],
-                '_score': hit['_score']
+                '_score': hit['_score'],
+                '_id': hit['_id']
             } for hit in result['hits']['hits']]
         except Exception as e:
             print(f"Error searching documents: {str(e)}")
+            raise
+
+    async def count(self, query: Dict[str, Any]) -> int:
+        """Count documents matching the specified query."""
+        es = await self.es
+        try:
+            result = await es.count(
+                index=self.index_name,
+                query=query
+            )
+            return result['count']
+        except Exception as e:
+            print(f"Error counting documents: {str(e)}")
             raise
 
     async def update_document(self, id: str, document: Dict[str, Any]) -> bool:

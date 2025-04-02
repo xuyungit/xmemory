@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.api.v1.endpoints import memories
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -17,9 +18,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import and include routers
-# from app.api.v1.endpoints import some_router
-# app.include_router(some_router, prefix=settings.API_V1_STR)
+# Include routers
+app.include_router(memories.router, prefix=f"{settings.API_V1_STR}/memories", tags=["memories"])
 
 @app.get("/")
 async def root():

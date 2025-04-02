@@ -46,12 +46,13 @@ class MemoryDocument:
         user_id: str,
         title: Optional[str] = None,  # 可选的标题
         summary: Optional[str] = None,  # 可选的摘要
-        parent_id: str = None,
-        related_ids: List[str] = None,
-        embedding: List[float] = None,
-        created_at: str = None,
-        updated_at: str = None,
-        _score: Optional[float] = None
+        parent_id: Optional[str] = None,
+        related_ids: Optional[List[str]] = None,
+        embedding: Optional[List[float]] = None,
+        created_at: Optional[str] = None,
+        updated_at: Optional[str] = None,
+        _score: Optional[float] = None,
+        _id: Optional[str] = None,
     ):
         self.content = content
         self.memory_type = memory_type
@@ -65,6 +66,8 @@ class MemoryDocument:
         self.created_at = created_at
         self.updated_at = updated_at
         self._score = _score
+        self._id = _id
+
     def to_dict(self) -> Dict[str, Any]:
         doc_dict = {
             "content": self.content,
@@ -91,8 +94,10 @@ class MemoryDocument:
         return cls(**data)
 
     def __str__(self) -> str:
+        id_str = f"id={self._id}, " if self._id else ""
         return (
             f"MemoryDocument("
+            f"{id_str}"
             f"type={self.memory_type}, "
             f"title={self.title or 'No title'}, "
             f"content={self.content[:50]}..., "
