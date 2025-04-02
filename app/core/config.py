@@ -19,7 +19,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     
     # Embedding settings
-    EMBEDDING_DIMENSION: int = 1536  # Default to OpenAI's text-embedding-ada-002 dimension
+    EMBEDDING_DIMENSION: int = 1024
+
+    # OpenAI settings
+    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_API_BASE: Optional[str] = None
+    EMBEDDING_MODEL: str = "text-embedding-v3"
 
     # Debug settings
     DEBUG: bool = False

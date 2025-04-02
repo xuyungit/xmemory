@@ -1,6 +1,24 @@
+import os
 from typing import List, Optional
+from openai import OpenAI
+from app.core.config import settings
 from app.db.elasticsearch.repository import ElasticsearchRepository
 from app.db.elasticsearch.models import MemoryDocument, MEMORY_DOCUMENT_MAPPING
+
+def embed_text(text: str) -> List[float]:
+    if not text:
+        return None
+    client = OpenAI(
+        api_key=settings.OPENAI_API_KEY,
+        base_url=settings.OPENAI_API_BASE
+    )    
+    response = client.embeddings.create(
+        input=text,
+        model=settings.EMBEDDING_MODEL,
+        dimensions=settings.EMBEDDING_DIMENSION,
+        encoding_format="float"
+    )
+    return response.data[0].embedding
 
 class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
     def __init__(self):
@@ -13,6 +31,10 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
 
     async def create_memory(self, memory: MemoryDocument) -> str:
         """Create a new memory document."""
+        content = memory.content
+        embedding = embed_text(content)
+        if embedding:
+            memory.embedding = embedding
         return await self.index_document(memory.to_dict())
 
     async def get_memory(self, id: str) -> Optional[MemoryDocument]:

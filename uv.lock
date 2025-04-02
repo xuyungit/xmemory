@@ -9,13 +9,21 @@ aiosignal==1.3.2
 annotated-types==0.7.0
     # via pydantic
 anyio==4.9.0
-    # via starlette
+    # via
+    #   httpx
+    #   openai
+    #   starlette
 attrs==25.3.0
     # via aiohttp
 certifi==2025.1.31
-    # via elasticsearch
+    # via
+    #   elasticsearch
+    #   httpcore
+    #   httpx
 click==8.1.8
     # via uvicorn
+distro==1.9.0
+    # via openai
 elasticsearch==7.17.12
     # via xmemory (pyproject.toml)
 fastapi==0.115.12
@@ -25,18 +33,29 @@ frozenlist==1.5.0
     #   aiohttp
     #   aiosignal
 h11==0.14.0
-    # via uvicorn
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.7
+    # via httpx
+httpx==0.28.1
+    # via openai
 idna==3.10
     # via
     #   anyio
+    #   httpx
     #   yarl
 iniconfig==2.1.0
     # via pytest
+jiter==0.9.0
+    # via openai
 multidict==6.3.1
     # via
     #   aiohttp
     #   yarl
 numpy==2.2.4
+    # via xmemory (pyproject.toml)
+openai==1.70.0
     # via xmemory (pyproject.toml)
 packaging==24.2
     # via pytest
@@ -49,6 +68,7 @@ propcache==0.3.1
 pydantic==2.11.1
     # via
     #   fastapi
+    #   openai
     #   pydantic-settings
 pydantic-core==2.33.0
     # via pydantic
@@ -65,13 +85,18 @@ python-dotenv==1.1.0
     #   xmemory (pyproject.toml)
     #   pydantic-settings
 sniffio==1.3.1
-    # via anyio
+    # via
+    #   anyio
+    #   openai
 starlette==0.46.1
     # via fastapi
+tqdm==4.67.1
+    # via openai
 typing-extensions==4.13.0
     # via
     #   anyio
     #   fastapi
+    #   openai
     #   pydantic
     #   pydantic-core
     #   typing-inspection

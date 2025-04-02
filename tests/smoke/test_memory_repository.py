@@ -92,7 +92,7 @@ async def test_memory_repository_smoke():
             print("Update successful")
             
             # Wait for Elasticsearch to process the update
-            await wait_for_consistency()
+            await wait_for_consistency(2)
             
             # Verify the update
             updated_memory = await repo.get_memory(memory_ids[0])
