@@ -17,14 +17,16 @@ attrs==25.3.0
     # via aiohttp
 certifi==2025.1.31
     # via
-    #   elasticsearch
+    #   elastic-transport
     #   httpcore
     #   httpx
 click==8.1.8
     # via uvicorn
 distro==1.9.0
     # via openai
-elasticsearch==7.17.12
+elastic-transport==8.17.1
+    # via elasticsearch
+elasticsearch==8.17.2
     # via xmemory (pyproject.toml)
 fastapi==0.115.12
     # via xmemory (pyproject.toml)
@@ -103,7 +105,7 @@ typing-extensions==4.13.0
 typing-inspection==0.4.0
     # via pydantic
 urllib3==1.26.20
-    # via elasticsearch
+    # via elastic-transport
 uvicorn==0.34.0
     # via xmemory (pyproject.toml)
 yarl==1.18.3

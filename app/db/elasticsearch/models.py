@@ -32,7 +32,7 @@ MEMORY_DOCUMENT_MAPPING: Dict[str, Any] = {
             "dims": settings.EMBEDDING_DIMENSION,
             "index": True,
             "similarity": "cosine"
-        }
+        },
     }
 }
 
@@ -51,6 +51,7 @@ class MemoryDocument:
         embedding: List[float] = None,
         created_at: str = None,
         updated_at: str = None,
+        _score: Optional[float] = None
     ):
         self.content = content
         self.memory_type = memory_type
@@ -63,7 +64,7 @@ class MemoryDocument:
         self.embedding = embedding
         self.created_at = created_at
         self.updated_at = updated_at
-
+        self._score = _score
     def to_dict(self) -> Dict[str, Any]:
         doc_dict = {
             "content": self.content,
@@ -87,4 +88,19 @@ class MemoryDocument:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'MemoryDocument':
-        return cls(**data) 
+        return cls(**data)
+
+    def __str__(self) -> str:
+        return (
+            f"MemoryDocument("
+            f"type={self.memory_type}, "
+            f"title={self.title or 'No title'}, "
+            f"content={self.content[:50]}..., "
+            f"tags={self.tags}, "
+            f"created_at={self.created_at},"
+            f"_score={self._score}"
+            f")"
+        )
+
+    def __repr__(self) -> str:
+        return self.__str__() 

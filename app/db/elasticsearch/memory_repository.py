@@ -65,10 +65,11 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         vector: List[float],
         user_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        size: int = 10
+        size: int = 10,
+        return_vector: bool = False
     ) -> List[MemoryDocument]:
         """Search memories using vector similarity with KNN."""
-        knn_query = {
+        query = {
             "knn": {
                 "field": "embedding",
                 "query_vector": vector,
@@ -78,21 +79,25 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         }
 
         if user_id or tags:
-            knn_query["knn"]["filter"] = {
+            query["knn"]["filter"] = {
                 "bool": {
                     "must": []
                 }
             }
             if user_id:
-                knn_query["knn"]["filter"]["bool"]["must"].append(
+                query["knn"]["filter"]["bool"]["must"].append(
                     {"term": {"user_id": user_id}}
                 )
             if tags:
-                knn_query["knn"]["filter"]["bool"]["must"].append(
+                query["knn"]["filter"]["bool"]["must"].append(
                     {"terms": {"tags": tags}}
                 )
 
-        results = await self.search(knn_query, size=size)
+        # Exclude embedding field if return_vector is False
+        if not return_vector:
+            query["_source"] = {"excludes": ["embedding"]}
+
+        results = await self.search(query, size=size)
         return [MemoryDocument.from_dict(doc) for doc in results]
 
     async def hybrid_search(

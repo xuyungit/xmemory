@@ -30,11 +30,24 @@ class ElasticsearchRepository(Generic[T]):
             print(f"Error creating index {self.index_name}: {str(e)}")
             raise
 
+    async def delete_index(self, are_you_sure: bool = False) -> None:
+        """Delete the index."""
+        es = await self.es
+        try:
+            if are_you_sure:
+                await es.indices.delete(index=self.index_name)
+                print(f"Successfully deleted index {self.index_name}")
+            else:
+                print(f"Index {self.index_name} not deleted. Use delete_index(are_you_sure=True) to delete it.")
+        except Exception as e:
+            print(f"Error deleting index {self.index_name}: {str(e)}")
+            raise
+
     async def index_document(self, document: Dict[str, Any], id: Optional[str] = None) -> str:
         """Index a document and return its ID."""
         es = await self.es
         try:
-            print(f"Indexing document in {self.index_name}: {document}")
+            # print(f"Indexing document in {self.index_name}: {document}")
             result = await es.index(
                 index=self.index_name,
                 document=document,
@@ -63,10 +76,22 @@ class ElasticsearchRepository(Generic[T]):
         """Search for documents using the specified query."""
         es = await self.es
         try:
-            print(f"Searching in {self.index_name} with query: {query}")
-            result = await es.search(index=self.index_name, query=query, size=size)
-            print(f"Search results: {result}")
-            return [hit['_source'] for hit in result['hits']['hits']]
+            # Check if this is a KNN query
+            if "knn" in query:
+                result = await es.search(
+                    index=self.index_name,
+                    body=query
+                )
+            else:
+                result = await es.search(
+                    index=self.index_name,
+                    query=query,
+                    size=size
+                )
+            return [{
+                **hit['_source'],
+                '_score': hit['_score']
+            } for hit in result['hits']['hits']]
         except Exception as e:
             print(f"Error searching documents: {str(e)}")
             raise

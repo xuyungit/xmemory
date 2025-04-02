@@ -7,7 +7,7 @@ authors = [
 ]
 dependencies = [
     "fastapi",
-    "elasticsearch[async]>=7.10.0,<8.0.0",
+    "elasticsearch[async]>=8.0.0",
     "python-dotenv",
     "uvicorn",
     "numpy",

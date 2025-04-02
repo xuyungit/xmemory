@@ -5,6 +5,7 @@ from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
 from app.llm.embeddings import embed_text
 from app.db.elasticsearch.client import get_es, es_client
+import logging
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -23,9 +24,9 @@ async def memory_repository():
     yield repo
     # Cleanup after test
     try:
-        await repo.delete_index()
-    except Exception:
-        pass
+        await repo.delete_index(are_you_sure=True)
+    except Exception as e:
+        logging.error(f"Error deleting index: {e}")
 
 @pytest_asyncio.fixture(scope="function")
 async def setup_test_memories(memory_repository):
@@ -54,6 +55,12 @@ async def setup_test_memories(memory_repository):
             user_id="test_user",
             tags=["hobbies", "outdoor"],
             memory_type=MemoryType.RAW
+        ),
+        MemoryDocument(
+            content="我爱吃鸡蛋西红柿",
+            user_id="test_user",
+            tags=["hobbies", "outdoor"],
+            memory_type=MemoryType.RAW
         )
     ]
     
@@ -76,11 +83,22 @@ async def test_search_by_vector(memory_repository, setup_test_memories):
         size=2
     )
     
+    logging.info(f"Search results: {results}")
+    logging.info("Test completed successfully")
     # Verify results
     assert len(results) == 2
     # The first result should be about programming
     assert "programming" in results[0].content.lower()
     assert "python" in results[0].content.lower()
+
+    query_vector = embed_text("番茄")
+    results = await memory_repository.search_by_vector(
+        vector=query_vector,
+        user_id="test_user",
+        size=2
+    )
+    logging.info(f"Search results: {results}")
+    
 
 @pytest.mark.asyncio
 async def test_hybrid_search(memory_repository, setup_test_memories):

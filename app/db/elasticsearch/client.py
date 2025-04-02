@@ -10,7 +10,7 @@ async def get_elasticsearch_client() -> AsyncElasticsearch:
     
     client = AsyncElasticsearch(
         hosts=[settings.ELASTICSEARCH_HOSTS],
-        http_auth=(settings.ELASTICSEARCH_USERNAME, settings.ELASTICSEARCH_PASSWORD) if settings.ELASTICSEARCH_USERNAME and settings.ELASTICSEARCH_PASSWORD else None,
+        basic_auth=(settings.ELASTICSEARCH_USERNAME, settings.ELASTICSEARCH_PASSWORD) if settings.ELASTICSEARCH_USERNAME and settings.ELASTICSEARCH_PASSWORD else None,
         # Add any additional configuration here
         # For example:
         # verify_certs=False,
