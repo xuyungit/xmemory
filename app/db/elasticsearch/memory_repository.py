@@ -4,25 +4,11 @@ from openai import OpenAI
 from app.core.config import settings
 from app.db.elasticsearch.repository import ElasticsearchRepository
 from app.db.elasticsearch.models import MemoryDocument, MEMORY_DOCUMENT_MAPPING
-
-def embed_text(text: str) -> List[float]:
-    if not text:
-        return None
-    client = OpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        base_url=settings.OPENAI_API_BASE
-    )    
-    response = client.embeddings.create(
-        input=text,
-        model=settings.EMBEDDING_MODEL,
-        dimensions=settings.EMBEDDING_DIMENSION,
-        encoding_format="float"
-    )
-    return response.data[0].embedding
+from app.llm.embeddings import embed_text
 
 class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
-    def __init__(self):
-        super().__init__(index_name="memories")
+    def __init__(self, index_name: str = "memories"):
+        super().__init__(index_name)
         self.mapping = MEMORY_DOCUMENT_MAPPING
 
     async def initialize(self):
@@ -81,32 +67,32 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         tags: Optional[List[str]] = None,
         size: int = 10
     ) -> List[MemoryDocument]:
-        """Search memories using vector similarity."""
-        search_query = {
-            "script_score": {
-                "query": {
-                    "bool": {
-                        "must": []
-                    }
-                },
-                "script": {
-                    "source": "cosineSimilarity(params.query_vector, 'embedding') + 1.0",
-                    "params": {"query_vector": vector}
-                }
+        """Search memories using vector similarity with KNN."""
+        knn_query = {
+            "knn": {
+                "field": "embedding",
+                "query_vector": vector,
+                "k": size,
+                "num_candidates": size * 10
             }
         }
 
-        if user_id:
-            search_query["script_score"]["query"]["bool"]["must"].append(
-                {"term": {"user_id": user_id}}
-            )
-        
-        if tags:
-            search_query["script_score"]["query"]["bool"]["must"].append(
-                {"terms": {"tags": tags}}
-            )
+        if user_id or tags:
+            knn_query["knn"]["filter"] = {
+                "bool": {
+                    "must": []
+                }
+            }
+            if user_id:
+                knn_query["knn"]["filter"]["bool"]["must"].append(
+                    {"term": {"user_id": user_id}}
+                )
+            if tags:
+                knn_query["knn"]["filter"]["bool"]["must"].append(
+                    {"terms": {"tags": tags}}
+                )
 
-        results = await self.search(search_query, size=size)
+        results = await self.search(knn_query, size=size)
         return [MemoryDocument.from_dict(doc) for doc in results]
 
     async def hybrid_search(
