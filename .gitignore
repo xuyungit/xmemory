@@ -44,3 +44,10 @@ Thumbs.db
 .env.development.local
 .env.test.local
 .env.production.local 
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/package-lock.json
+frontend/yarn.lock
+frontend/yarn-error.log

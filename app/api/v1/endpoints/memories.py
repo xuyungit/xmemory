@@ -42,7 +42,7 @@ class MemoryListResponse(BaseModel):
     page_size: int
     total_pages: int
 
-@router.post("/raw", response_model=MemoryIdResponse)
+@router.post("/", response_model=MemoryIdResponse)
 async def create_raw_memory(memory: MemoryCreate):
     """
     Create a new raw memory.
@@ -128,6 +128,65 @@ async def list_memories(
             page=page,
             page_size=page_size,
             total_pages=total_pages
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/search", response_model=MemoryListResponse)
+async def vector_search(
+    query: str,
+    size: int = Query(10, ge=1, le=100),
+    user_id: Optional[str] = None
+):
+    """
+    Search memories using vector similarity.
+    
+    Args:
+        query: The text query to search for
+        size: Number of results to return (1-100)
+        user_id: Optional user ID to filter results
+        tags: Optional list of tags to filter results
+    """
+    try:
+        # Generate embedding for the query
+        from app.llm.embeddings import embed_text
+        query_vector = embed_text(query)
+        if not query_vector:
+            raise HTTPException(status_code=400, detail="Failed to generate embedding for query")
+
+        # Search using vector similarity
+        repo = MemoryRepository()
+        memory_docs = await repo.search_by_vector(
+            vector=query_vector,
+            user_id=user_id,
+            size=size
+        )
+        
+        # Convert MemoryDocument to APIMemoryDocument
+        memories = [
+            APIMemoryDocument(
+                id=doc._id,
+                content=doc.content,
+                memory_type=doc.memory_type,
+                tags=doc.tags,
+                user_id=doc.user_id,
+                title=doc.title,
+                summary=doc.summary,
+                parent_id=doc.parent_id,
+                related_ids=doc.related_ids,
+                created_at=doc.created_at,
+                updated_at=doc.updated_at
+            )
+            for doc in memory_docs
+        ]
+        
+        return MemoryListResponse(
+            memories=memories,
+            total=len(memories),
+            page=1,
+            page_size=size,
+            total_pages=1
         )
         
     except Exception as e:

@@ -1,22 +1,14 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import theme from './styles/theme';
+import { ConfigProvider } from 'antd';
+import zhCN from 'antd/locale/zh_CN';
+import Home from './pages/Home';
 
-// Import pages here
-const Home = () => <div>Home Page</div>;
-const About = () => <div>About Page</div>;
-
-function App() {
+const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-      </Routes>
-    </ThemeProvider>
+    <ConfigProvider locale={zhCN}>
+      <Home />
+    </ConfigProvider>
   );
-}
+};
 
 export default App; 
