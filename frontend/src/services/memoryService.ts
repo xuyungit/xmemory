@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api/v1';
 
 export interface Memory {
   id: string;
@@ -8,19 +8,22 @@ export interface Memory {
   title?: string;
   content: string;
   created_at: string;
+  memory_type: string;
+  tags: string[];
 }
 
 export const createMemory = async (data: {
   user_id: string;
   title?: string;
   content: string;
+  tags?: string[];
 }): Promise<Memory> => {
-  const response = await axios.post(`${API_BASE_URL}/memories`, data);
+  const response = await axios.post(`${API_BASE_URL}/memories/`, data);
   return response.data;
 };
 
 export const getMemories = async (user_id?: string): Promise<Memory[]> => {
-  const response = await axios.get(`${API_BASE_URL}/memories`, {
+  const response = await axios.get(`${API_BASE_URL}/memories/`, {
     params: {
       user_id,
     },

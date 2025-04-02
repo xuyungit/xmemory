@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, Card, Typography, Spin, Empty, Input, Button } from 'antd';
+import { List, Card, Typography, Spin, Empty, Input, Form } from 'antd';
 import { getMemories } from '../services/memoryService';
 import { getUserID, setUserID } from '../utils/userStorage';
 
@@ -18,13 +18,15 @@ const MemoryList: React.FC = () => {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
   const [user_id, setUser_id] = useState<string>('');
+  const [form] = Form.useForm();
 
   useEffect(() => {
     const savedUserID = getUserID();
     if (savedUserID) {
       setUser_id(savedUserID);
+      form.setFieldsValue({ user_id: savedUserID });
     }
-  }, []);
+  }, [form]);
 
   useEffect(() => {
     if (user_id) {
@@ -56,13 +58,17 @@ const MemoryList: React.FC = () => {
       </Title>
 
       <div style={{ marginBottom: 24 }}>
-        <Search
-          placeholder="输入用户ID查看记忆"
-          allowClear
-          enterButton="搜索"
-          size="large"
-          onSearch={onSearch}
-        />
+        <Form form={form}>
+          <Form.Item name="user_id" noStyle>
+            <Search
+              placeholder="输入用户ID查看记忆"
+              allowClear
+              enterButton="搜索"
+              size="large"
+              onSearch={onSearch}
+            />
+          </Form.Item>
+        </Form>
       </div>
       
       {loading ? (
