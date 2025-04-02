@@ -1,11 +1,12 @@
-from pydantic_settings import BaseSettings
 from typing import Optional
+
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "XMemory"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
-    
+
     # Database settings
     DATABASE_URL: Optional[str] = None
 
@@ -13,11 +14,11 @@ class Settings(BaseSettings):
     ELASTICSEARCH_HOSTS: Optional[str] = None
     ELASTICSEARCH_USERNAME: Optional[str] = None
     ELASTICSEARCH_PASSWORD: Optional[str] = None
-    
+
     # Security settings
     SECRET_KEY: str = "your-secret-key-here"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
-    
+
     # Embedding settings
     EMBEDDING_DIMENSION: int = 1024
 
@@ -28,7 +29,7 @@ class Settings(BaseSettings):
 
     # Debug settings
     DEBUG: bool = False
-    
+
     class Config:
         env_file = ".env"
 
