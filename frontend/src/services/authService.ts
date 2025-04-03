@@ -17,8 +17,21 @@ export const login = async (username: string, password: string) => {
   throw new Error('Login failed');
 };
 
-export const logout = () => {
-  localStorage.removeItem('session_id');
+export const logout = async () => {
+  try {
+    const sessionId = getSessionId();
+    if (sessionId) {
+      await axios.post(`${API_BASE_URL}/auth/logout`, null, {
+        headers: {
+          'Authorization': `Bearer ${sessionId}`
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Logout failed:', error);
+  } finally {
+    localStorage.removeItem('session_id');
+  }
 };
 
 export const isAuthenticated = () => {

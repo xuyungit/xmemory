@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
-import { Tabs, Layout } from 'antd';
+import { Tabs, Layout, Button, Space } from 'antd';
+import { LogoutOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import CreateMemory from '../components/CreateMemory';
 import MemoryList from '../components/MemoryList';
 import SearchMemory from '../components/SearchMemory';
+import { logout } from '../services/authService';
 
-const { Content } = Layout;
+const { Content, Header } = Layout;
 
 const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState('1');
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   const items = [
     {
@@ -29,6 +38,24 @@ const Home: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      <Header style={{ 
+        background: '#fff', 
+        padding: '0 24px',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+      }}>
+        <Space>
+          <Button 
+            type="text" 
+            icon={<LogoutOutlined />} 
+            onClick={handleLogout}
+          >
+            退出登录
+          </Button>
+        </Space>
+      </Header>
       <Content style={{ padding: '24px' }}>
         <Tabs
           activeKey={activeTab}
