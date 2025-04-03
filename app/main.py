@@ -5,6 +5,8 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 from app.core.config import settings
 from app.api.v1.endpoints import memories
+from app.core.middleware import auth_middleware
+from app.api import auth
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -27,6 +29,12 @@ app.mount("/static", StaticFiles(directory=str(frontend_build / "static")), name
 
 # Include routers with API prefix
 app.include_router(memories.router, prefix=f"{settings.API_V1_STR}/memories", tags=["memories"])
+
+# Add authentication middleware
+app.middleware("http")(auth_middleware)
+
+# Include auth routes
+app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth")
 
 @app.get("/")
 async def root():

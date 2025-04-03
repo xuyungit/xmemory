@@ -1,4 +1,8 @@
 from typing import Optional
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 from pydantic_settings import BaseSettings
 
@@ -29,6 +33,12 @@ class Settings(BaseSettings):
 
     # Debug settings
     DEBUG: bool = False
+
+    # Authentication settings
+    AUTH_USERNAME: str = os.getenv("AUTH_USERNAME", "admin")
+    AUTH_PASSWORD: str = os.getenv("AUTH_PASSWORD", "admin")
+    SESSION_EXPIRY_DAYS: int = 30
+    SESSION_DIR: str = os.path.join(BASE_DIR, "data", "sessions")
 
     class Config:
         env_file = ".env"
