@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, message } from 'antd';
+import { Form, Input, Button, message, DatePicker } from 'antd';
 import { createMemory } from '../services/memoryService';
 import { getUserID, setUserID } from '../utils/userStorage';
+import dayjs from 'dayjs';
 
 const { TextArea } = Input;
 
@@ -20,9 +21,15 @@ const CreateMemory: React.FC = () => {
     try {
       setLoading(true);
       setUserID(values.user_id);
+      
+      // Format the date if it exists
+      if (values.created_at) {
+        values.created_at = dayjs(values.created_at).format('YYYY-MM-DD HH:mm:ss');
+      }
+      
       await createMemory(values);
       message.success('记忆创建成功！');
-      form.resetFields(['title', 'content']);
+      form.resetFields(['title', 'content', 'created_at']);
       // Keep the user_id field value
       form.setFieldsValue({ user_id: values.user_id });
     } catch (error) {
@@ -60,6 +67,18 @@ const CreateMemory: React.FC = () => {
           rules={[{ required: true, message: '请输入记忆内容' }]}
         >
           <TextArea rows={4} placeholder="请输入记忆内容" />
+        </Form.Item>
+
+        <Form.Item
+          name="created_at"
+          label="创建时间"
+        >
+          <DatePicker
+            showTime
+            format="YYYY-MM-DD HH:mm:ss"
+            placeholder="选择或输入创建时间（可选）"
+            style={{ width: '100%' }}
+          />
         </Form.Item>
 
         <Form.Item>

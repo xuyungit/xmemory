@@ -14,7 +14,9 @@ dependencies = [
     "pytest",
     "pytest-asyncio",
     "pydantic-settings",
-    "openai"
+    "openai",
+    "python-dateutil",
+    "pytz"
 ]
 requires-python = ">=3.10"
 

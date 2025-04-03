@@ -65,8 +65,36 @@ class MemoryDocument:
         self.parent_id = parent_id
         self.related_ids = related_ids or []
         self.embedding = embedding
-        self.created_at = created_at
-        self.updated_at = updated_at
+        # 确保日期时间格式一致
+        if created_at:
+            try:
+                from datetime import datetime
+                import pytz
+                from dateutil import parser
+                dt = parser.parse(created_at)
+                if dt.tzinfo is None:
+                    dt = pytz.timezone('Asia/Shanghai').localize(dt)
+                else:
+                    dt = dt.astimezone(pytz.timezone('Asia/Shanghai'))
+                self.created_at = dt.strftime('%Y-%m-%dT%H:%M:%S%z')
+            except Exception:
+                self.created_at = created_at
+        else:
+            self.created_at = None
+            
+        if updated_at:
+            try:
+                dt = parser.parse(updated_at)
+                if dt.tzinfo is None:
+                    dt = pytz.timezone('Asia/Shanghai').localize(dt)
+                else:
+                    dt = dt.astimezone(pytz.timezone('Asia/Shanghai'))
+                self.updated_at = dt.strftime('%Y-%m-%dT%H:%M:%S%z')
+            except Exception:
+                self.updated_at = updated_at
+        else:
+            self.updated_at = None
+            
         self._score = _score
         self._id = _id
         self.processed = processed

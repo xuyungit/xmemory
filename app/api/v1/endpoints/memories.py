@@ -3,6 +3,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from enum import Enum
+import pytz
+from dateutil import parser
 
 from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
@@ -19,6 +21,7 @@ class MemoryCreate(BaseModel):
     summary: Optional[str] = None
     parent_id: Optional[str] = None
     related_ids: Optional[List[str]] = None
+    created_at: Optional[str] = None  # 支持多种格式，如：2024-03-20, 2024-03-20 14:30, 2024-03-20T14:30:00+08:00
 
 class MemoryIdResponse(BaseModel):
     id: str
@@ -51,6 +54,24 @@ async def create_memory(memory: MemoryCreate):
     """
     try:
         # Create memory document
+        if memory.created_at:
+            try:
+                # 使用 dateutil.parser 解析各种格式的日期时间
+                created_at = parser.parse(memory.created_at)
+                # 确保时区为 UTC+8
+                if created_at.tzinfo is None:
+                    created_at = pytz.timezone('Asia/Shanghai').localize(created_at)
+                else:
+                    created_at = created_at.astimezone(pytz.timezone('Asia/Shanghai'))
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid datetime format: {str(e)}")
+        else:
+            created_at = datetime.now(pytz.timezone('Asia/Shanghai'))
+            
+        # 统一使用 ISO 格式，包含时区信息
+        created_at_str = created_at.strftime('%Y-%m-%dT%H:%M:%S%z')
+        updated_at = datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%dT%H:%M:%S%z')
+            
         memory_doc = MemoryDocument(
             content=memory.content,
             memory_type=MemoryType.RAW,
@@ -60,8 +81,8 @@ async def create_memory(memory: MemoryCreate):
             summary=memory.summary,
             parent_id=memory.parent_id,
             related_ids=memory.related_ids,
-            created_at=datetime.now().isoformat(),
-            updated_at=datetime.now().isoformat(),
+            created_at=created_at_str,
+            updated_at=updated_at,
             processed=False
         )
 
