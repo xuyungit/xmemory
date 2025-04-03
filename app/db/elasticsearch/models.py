@@ -33,6 +33,7 @@ MEMORY_DOCUMENT_MAPPING: Dict[str, Any] = {
             "index": True,
             "similarity": "cosine"
         },
+        'processed': {'type': 'boolean'}
     }
 }
 
@@ -53,6 +54,7 @@ class MemoryDocument:
         updated_at: Optional[str] = None,
         _score: Optional[float] = None,
         _id: Optional[str] = None,
+        processed: Optional[bool] = False,
     ):
         self.content = content
         self.memory_type = memory_type
@@ -67,6 +69,7 @@ class MemoryDocument:
         self.updated_at = updated_at
         self._score = _score
         self._id = _id
+        self.processed = processed
 
     def to_dict(self) -> Dict[str, Any]:
         doc_dict = {
@@ -87,6 +90,8 @@ class MemoryDocument:
             doc_dict["related_ids"] = self.related_ids
         if self.embedding is not None:
             doc_dict["embedding"] = self.embedding
+        if self.processed:
+            doc_dict["processed"] = self.processed
         return doc_dict
 
     @classmethod

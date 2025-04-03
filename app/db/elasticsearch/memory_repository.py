@@ -14,6 +14,7 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
 
     async def initialize(self):
         """Initialize the index with proper mapping."""
+        logging.info(f"Initializing index with mapping: {self.mapping}")
         await self.create_index(self.mapping)
 
     async def create_memory(self, memory: MemoryDocument) -> str:

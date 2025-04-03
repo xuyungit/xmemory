@@ -7,11 +7,21 @@ from app.core.config import settings
 from app.api.v1.endpoints import memories
 from app.core.middleware import auth_middleware
 from app.api import auth
+from app.db.elasticsearch.memory_repository import MemoryRepository
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize the memory repository on startup."""
+    memory_repo = MemoryRepository()
+    await memory_repo.initialize()
+    yield
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan
 )
 
 # Set up CORS middleware

@@ -61,7 +61,8 @@ async def create_memory(memory: MemoryCreate):
             parent_id=memory.parent_id,
             related_ids=memory.related_ids,
             created_at=datetime.now().isoformat(),
-            updated_at=datetime.now().isoformat()
+            updated_at=datetime.now().isoformat(),
+            processed=False
         )
 
         # Store in repository
