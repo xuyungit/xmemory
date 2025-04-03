@@ -40,23 +40,24 @@ const Home: React.FC = () => {
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ 
         background: '#fff', 
-        padding: '0 24px',
+        padding: '0 16px',
         display: 'flex',
         justifyContent: 'flex-end',
         alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+        height: '40px',
+        lineHeight: '40px'
       }}>
-        <Space>
-          <Button 
-            type="text" 
-            icon={<LogoutOutlined />} 
-            onClick={handleLogout}
-          >
-            退出登录
-          </Button>
-        </Space>
+        <Button 
+          type="text" 
+          icon={<LogoutOutlined />} 
+          onClick={handleLogout}
+          style={{ padding: '0 4px' }}
+        >
+          退出登录
+        </Button>
       </Header>
-      <Content style={{ padding: '24px' }}>
+      <Content style={{ padding: '16px' }}>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
