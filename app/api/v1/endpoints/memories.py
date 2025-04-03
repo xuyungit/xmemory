@@ -6,8 +6,10 @@ from enum import Enum
 
 from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
+from app.storage.file_storage import FileStorage
 
 router = APIRouter()
+file_storage = FileStorage()
 
 class MemoryCreate(BaseModel):
     content: str
@@ -43,9 +45,9 @@ class MemoryListResponse(BaseModel):
     total_pages: int
 
 @router.post("/", response_model=MemoryIdResponse)
-async def create_raw_memory(memory: MemoryCreate):
+async def create_memory(memory: MemoryCreate):
     """
-    Create a new raw memory.
+    Create a new memory and save it to both Elasticsearch and local file storage.
     """
     try:
         # Create memory document
@@ -65,6 +67,11 @@ async def create_raw_memory(memory: MemoryCreate):
         # Store in repository
         repo = MemoryRepository()
         memory_id = await repo.create_memory(memory_doc)
+
+        # Save to local file storage
+        memory_data = memory_doc.to_dict()
+        memory_data["_id"] = memory_id  # Add the ID to the data
+        file_storage.save_memory(memory_id, memory_data)
 
         return MemoryIdResponse(id=memory_id)
 

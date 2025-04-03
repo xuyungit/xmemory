@@ -52,3 +52,6 @@ frontend/build/
 frontend/package-lock.json
 frontend/yarn.lock
 frontend/yarn-error.log
+
+# Data
+data/memories/
