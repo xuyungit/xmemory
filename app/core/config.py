@@ -27,9 +27,14 @@ class Settings(BaseSettings):
     EMBEDDING_DIMENSION: int = 1024
 
     # OpenAI settings
-    OPENAI_API_KEY: Optional[str] = None
-    OPENAI_API_BASE: Optional[str] = None
+    OPENAI_API_KEY_FOR_EMBEDDING: Optional[str] = None
+    OPENAI_API_BASE_FOR_EMBEDDING: Optional[str] = None
     EMBEDDING_MODEL: str = "text-embedding-v3"
+
+    # OpenAI settings for LLM
+    OPENAI_API_KEY_FOR_LLM: Optional[str] = None
+    OPENAI_API_BASE_FOR_LLM: Optional[str] = None
+    LLM_MODEL: str = "gpt-4o"
 
     # Debug settings
     DEBUG: bool = False

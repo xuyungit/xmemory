@@ -6,8 +6,8 @@ def embed_text(text: str) -> List[float]:
     if not text:
         return None
     client = OpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        base_url=settings.OPENAI_API_BASE
+        api_key=settings.OPENAI_API_KEY_FOR_EMBEDDING,
+        base_url=settings.OPENAI_API_BASE_FOR_EMBEDDING
     )    
     response = client.embeddings.create(
         input=text,
