@@ -56,3 +56,6 @@ frontend/yarn-error.log
 # Data
 data/memories/
 data/sessions/
+
+# virutal environment
+.venv/
