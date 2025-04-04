@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from enum import Enum
 import pytz
@@ -9,6 +9,8 @@ from dateutil import parser
 from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
 from app.storage.file_storage import FileStorage
+
+from app.llm.memory_agent import update_insight_memory
 
 router = APIRouter()
 file_storage = FileStorage()
@@ -95,6 +97,8 @@ async def create_memory(memory: MemoryCreate):
         memory_data["_id"] = memory_id  # Add the ID to the data
         file_storage.save_memory(memory_id, memory_data)
 
+        # update insight memory
+        await update_insight_memory(memory_doc)
         return MemoryIdResponse(id=memory_id)
 
     except Exception as e:
@@ -178,16 +182,9 @@ async def vector_search(
         tags: Optional list of tags to filter results
     """
     try:
-        # Generate embedding for the query
-        from app.llm.embeddings import embed_text
-        query_vector = embed_text(query)
-        if not query_vector:
-            raise HTTPException(status_code=400, detail="Failed to generate embedding for query")
-
-        # Search using vector similarity
         repo = MemoryRepository()
-        memory_docs = await repo.search_by_vector(
-            vector=query_vector,
+        memory_docs = await repo.search_by_similarity(
+            query=query,
             user_id=user_id,
             size=size
         )

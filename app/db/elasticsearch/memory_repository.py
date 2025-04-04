@@ -62,6 +62,18 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         results = await self.search(search_query, size=size)
         return [MemoryDocument.from_dict(doc) for doc in results]
 
+    async def search_by_similarity(
+        self,
+        query: str,
+        user_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        size: int = 10
+    ) -> List[MemoryDocument]:
+        vector = embed_text(query)
+        if not vector:
+            raise ValueError("Failed to generate embedding for query")
+        return await self.search_by_vector(vector, user_id, tags, size)
+
     async def search_by_vector(
         self,
         vector: List[float],
