@@ -49,6 +49,7 @@ const MemoryList: React.FC = () => {
   const onSearch = (value: string) => {
     setUser_id(value);
     setUserID(value);
+    fetchMemories();
   };
 
   return (
