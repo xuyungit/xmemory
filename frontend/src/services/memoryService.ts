@@ -54,7 +54,8 @@ export const getMemories = async (
   page: number = 1,
   pageSize: number = 10,
   sortBy: string = 'created_at',
-  sortOrder: string = 'desc'
+  sortOrder: string = 'desc',
+  memory_type?: string
 ): Promise<PaginatedResponse> => {
   const response = await api.get('/memories/', {
     params: {
@@ -63,6 +64,7 @@ export const getMemories = async (
       page_size: pageSize,
       sort_by: sortBy,
       sort_order: sortOrder,
+      memory_type,
     },
   });
   return response.data;

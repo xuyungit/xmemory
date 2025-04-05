@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Typography, Spin, Empty, Table, TablePaginationConfig, Button, Space, Tooltip, Row, Col } from 'antd';
+import { Typography, Spin, Empty, Table, TablePaginationConfig, Button, Space, Tooltip, Row, Col, Select } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { getMemories, PaginatedResponse } from '../services/memoryService';
 import { getUserID } from '../utils/userStorage';
+import { getMemoryTypeOptions, MemoryTypeNames } from '../utils/memoryTypes';
 
 interface Memory {
   id: string;
@@ -10,6 +11,8 @@ interface Memory {
   title?: string;
   content: string;
   created_at: string;
+  memory_type: string;
+  tags: string[];
 }
 
 const MemoryList: React.FC = () => {
@@ -17,6 +20,7 @@ const MemoryList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [user_id, setUser_id] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
+  const [memoryType, setMemoryType] = useState<string | null>("all");
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 10,
@@ -39,26 +43,44 @@ const MemoryList: React.FC = () => {
       title: '时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      width: 180, // 设置时间列固定宽度
+      width: 160,
       render: (text: string) => new Date(text).toLocaleString(),
       sorter: true,
       defaultSortOrder: 'descend' as 'descend',
+    },
+    {
+      title: '类型',
+      dataIndex: 'memory_type',
+      key: 'memory_type',
+      width: 100, // 减小类型列宽度，从120px到100px
+      render: (type: string) => MemoryTypeNames[type] || type,
     },
     {
       title: '内容',
       dataIndex: 'content',
       key: 'content',
       ellipsis: { showTitle: false },
+      width: 'auto', // 添加这一行，让内容列自适应剩余宽度
       render: (text: string) => (
-        <div style={{ 
-          overflow: 'hidden', 
-          textOverflow: 'ellipsis', 
-          display: '-webkit-box', 
-          WebkitLineClamp: 2, // 从3行减少到2行，减少行高
-          WebkitBoxOrient: 'vertical' 
-        }}>
-          {text}
-        </div>
+        <Tooltip title={text.split('\n').map((line, i) => (
+          <div key={i}>{line}</div>
+        ))}>
+          <div style={{ 
+            overflow: 'hidden', 
+            textOverflow: 'ellipsis', 
+            display: '-webkit-box', 
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            whiteSpace: 'pre-line', // 保留换行符，同时允许自动换行
+            wordBreak: 'break-word', // 确保长单词也能正确换行
+            maxWidth: '100%', // 确保内容不会超出容器宽度
+            width: '100%', // 占满可用空间
+            wordWrap: 'break-word', // 兼容性更好的长文本换行
+            minWidth: '0', // 添加这一行，允许元素缩小到小于其内容尺寸
+          }}>
+            {text}
+          </div>
+        </Tooltip>
       ),
     },
   ];
@@ -71,12 +93,16 @@ const MemoryList: React.FC = () => {
       const { current = 1, pageSize = 10 } = pagination;
       const { sortBy, sortOrder } = sortInfo;
       
+      // 处理记忆类型筛选，仅当不是"全部"时传递参数
+      const typeFilter = memoryType && memoryType !== "all" ? memoryType : undefined;
+      
       const data: PaginatedResponse = await getMemories(
         user_id, 
         current as number, 
         pageSize as number,
         sortBy,
-        sortOrder
+        sortOrder,
+        typeFilter
       );
       
       setMemories(data.memories);
@@ -92,8 +118,8 @@ const MemoryList: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  // 只依赖必要的分页参数，而不是整个 pagination 对象
-  }, [user_id, pagination.current, pagination.pageSize, sortInfo.sortBy, sortInfo.sortOrder]);
+  // 增加 memoryType 作为依赖
+  }, [user_id, pagination.current, pagination.pageSize, sortInfo.sortBy, sortInfo.sortOrder, memoryType]);
 
   useEffect(() => {
     const savedUserID = getUserID();
@@ -130,13 +156,28 @@ const MemoryList: React.FC = () => {
     fetchMemories();
   };
 
+  // 处理记忆类型过滤变化
+  const handleTypeChange = (value: string) => {
+    setMemoryType(value);
+    // 重置到第一页
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto' }}> {/* 将最大宽度从800px增加到1000px */}
       {/* 工具栏 */}
-      <Row justify="end" style={{ marginBottom: 16 }}>
+      <Row justify="space-between" style={{ marginBottom: 16 }}>
+        <Col>
+          <Select
+            placeholder="选择记忆类型"
+            style={{ width: 150 }}
+            options={getMemoryTypeOptions()}
+            value={memoryType || "all"}
+            onChange={handleTypeChange}
+          />
+        </Col>
         <Col>
           <Space>
-            {/* 这里可以添加更多筛选组件 */}
             <Tooltip title="刷新记忆列表">
               <Button 
                 icon={<ReloadOutlined />} 
@@ -165,7 +206,7 @@ const MemoryList: React.FC = () => {
           onChange={handleTableChange}
           bordered
           size="small"
-          scroll={{ x: 'max-content' }}
+          scroll={{ x: '100%' }} // 从 'max-content' 改为 '100%'，限制表格宽度
           style={{ overflowX: 'auto' }}
           loading={loading}
         />
