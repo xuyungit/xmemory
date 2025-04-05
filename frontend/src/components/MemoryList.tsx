@@ -102,9 +102,9 @@ const MemoryList: React.FC = () => {
     
     try {
       setLoading(true);
-      // 使用传入的页码和每页数量，如果没有则从pagination中获取
-      const current = page || pagination.current || 1;
-      const size = pageSize || pagination.pageSize || 10;
+      // 使用传入的页码和每页数量，避免依赖pagination状态
+      const current = page || 1;
+      const size = pageSize || 10;
       const { sortBy, sortOrder } = sortInfo;
       
       // 处理记忆类型筛选，仅当不是"全部"时传递参数
@@ -113,17 +113,18 @@ const MemoryList: React.FC = () => {
       console.log(`获取第 ${current} 页数据，每页 ${size} 条`);
       const data: PaginatedResponse = await getMemories(
         user_id, 
-        current as number, 
-        size as number,
+        current, 
+        size,
         sortBy,
         sortOrder,
         typeFilter
       );
       
       setMemories(data.memories);
-      // 仅更新total和pageSize，不更新current避免分页被重置
+      // 更新分页信息
       setPagination(prev => ({
         ...prev,
+        current: current, // 确保页码与请求一致
         pageSize: data.page_size,
         total: data.total,
       }));
@@ -133,7 +134,7 @@ const MemoryList: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user_id, sortInfo, memoryType]); // 移除pagination依赖，避免死循环
+  }, [user_id, sortInfo, memoryType]); // pagination不再是依赖项
 
   useEffect(() => {
     const savedUserID = getUserID();
@@ -183,11 +184,13 @@ const MemoryList: React.FC = () => {
 
   // 处理记忆类型过滤变化
   const handleTypeChange = (value: string) => {
+    // 设置新的记忆类型
     setMemoryType(value);
     // 重置到第一页
     setPagination(prev => ({ ...prev, current: 1 }));
-    // 使用新的memoryType和页码1获取数据
-    fetchMemories(1, pagination.pageSize);
+    
+    // 不在这里调用fetchMemories，避免发送重复请求
+    // memoryType状态更新后会触发useEffect中的fetchMemories
   };
 
   // 处理删除操作
