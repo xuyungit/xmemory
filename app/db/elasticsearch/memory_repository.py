@@ -167,6 +167,22 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         """Delete a memory document."""
         return await self.delete_document(id)
 
+    async def get_projects(self):
+        """Get all projects."""
+        docs, count = await self.list_memories(
+            memory_type=MemoryType.PROJECT,
+            page=1,
+            page_size=1000
+        )
+        if len(docs) != count:
+            docs, _ = await self.list_memories(
+                memory_type=MemoryType.PROJECT,
+                page=1,
+                page_size=count
+            )
+        
+        return docs
+
     async def list_memories(
         self,
         memory_type: Optional[MemoryType] = None,
@@ -208,6 +224,7 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         # Build sort clause
         sort_clause = [{sort_by: {"order": sort_order}}]
         
+        print(f"query: {query}")
         # Execute search
         results = await self.search(
             query=query,
