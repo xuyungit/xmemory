@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, List, Card, Typography, Spin, Empty } from 'antd';
 import { searchMemories } from '../services/memoryService';
-import { getUserID, setUserID } from '../utils/userStorage';
+import { getUserID } from '../utils/userStorage';
 
 const { Title, Paragraph } = Typography;
 
@@ -18,18 +18,17 @@ const SearchMemory: React.FC = () => {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const savedUserID = getUserID();
-    if (savedUserID) {
-      form.setFieldsValue({ user_id: savedUserID });
-    }
-  }, [form]);
-
-  const onFinish = async (values: { user_id: string; searchText: string }) => {
+  const onFinish = async (values: { searchText: string }) => {
     try {
       setLoading(true);
-      setUserID(values.user_id);
-      const data = await searchMemories(values.user_id, values.searchText);
+      const user_id = getUserID();
+      
+      if (!user_id) {
+        console.error('用户未登录');
+        return;
+      }
+      
+      const data = await searchMemories(user_id, values.searchText);
       setMemories(data);
     } catch (error) {
       console.error('搜索记忆失败:', error);
@@ -50,14 +49,6 @@ const SearchMemory: React.FC = () => {
         onFinish={onFinish}
         style={{ marginBottom: 24 }}
       >
-        <Form.Item
-          name="user_id"
-          label="用户ID"
-          rules={[{ required: true, message: '请输入用户ID' }]}
-        >
-          <Input placeholder="请输入用户ID" />
-        </Form.Item>
-
         <Form.Item
           name="searchText"
           label="搜索内容"
@@ -104,4 +95,4 @@ const SearchMemory: React.FC = () => {
   );
 };
 
-export default SearchMemory; 
+export default SearchMemory;

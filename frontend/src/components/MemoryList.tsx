@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Typography, Spin, Empty, Input, Form, Table, TablePaginationConfig } from 'antd';
+import { Typography, Spin, Empty, Table, TablePaginationConfig } from 'antd';
 import { getMemories, PaginatedResponse } from '../services/memoryService';
-import { getUserID, setUserID } from '../utils/userStorage';
+import { getUserID } from '../utils/userStorage';
 
 const { Title } = Typography;
-const { Search } = Input;
 
 interface Memory {
   id: string;
@@ -33,7 +32,6 @@ const MemoryList: React.FC = () => {
     sortBy: 'created_at',
     sortOrder: 'desc'
   });
-  const [form] = Form.useForm();
 
   // 表格列定义
   const columns = [
@@ -99,25 +97,14 @@ const MemoryList: React.FC = () => {
     const savedUserID = getUserID();
     if (savedUserID) {
       setUser_id(savedUserID);
-      form.setFieldsValue({ user_id: savedUserID });
     }
-  }, [form]);
+  }, []);
 
   useEffect(() => {
     if (user_id) {
       fetchMemories();
     }
   }, [user_id, fetchMemories]);
-
-  const onSearch = (value: string) => {
-    setUser_id(value);
-    setUserID(value);
-    // 重置分页到第一页
-    setPagination(prev => ({
-      ...prev,
-      current: 1,
-    }));
-  };
 
   // 处理表格分页、排序、筛选变化
   const handleTableChange = (
@@ -140,27 +127,13 @@ const MemoryList: React.FC = () => {
       <Title level={2} style={{ textAlign: 'center', marginBottom: 24 }}>
         记忆列表
       </Title>
-
-      <div style={{ marginBottom: 24 }}>
-        <Form form={form}>
-          <Form.Item name="user_id" noStyle>
-            <Search
-              placeholder="输入用户ID查看记忆"
-              allowClear
-              enterButton="搜索"
-              size="large"
-              onSearch={onSearch}
-            />
-          </Form.Item>
-        </Form>
-      </div>
       
       {loading && memories.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '50px' }}>
           <Spin size="large" />
         </div>
       ) : memories.length === 0 ? (
-        <Empty description={user_id ? "该用户暂无记忆" : "请输入用户ID查看记忆"} />
+        <Empty description="暂无记忆" />
       ) : (
         <Table 
           dataSource={memories} 

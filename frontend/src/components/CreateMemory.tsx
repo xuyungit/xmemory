@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, message, DatePicker } from 'antd';
 import { createMemory } from '../services/memoryService';
-import { getUserID, setUserID } from '../utils/userStorage';
+import { getUserID } from '../utils/userStorage';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
@@ -9,18 +9,19 @@ const { TextArea } = Input;
 const CreateMemory: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const savedUserID = getUserID();
-    if (savedUserID) {
-      form.setFieldsValue({ user_id: savedUserID });
-    }
-  }, [form]);
-
+  
   const onFinish = async (values: any) => {
     try {
       setLoading(true);
-      setUserID(values.user_id);
+      const user_id = getUserID();
+      
+      if (!user_id) {
+        message.error('用户未登录');
+        return;
+      }
+      
+      // 添加用户ID到表单数据
+      values.user_id = user_id;
       
       // Format the date if it exists
       if (values.created_at) {
@@ -30,8 +31,6 @@ const CreateMemory: React.FC = () => {
       await createMemory(values);
       message.success('记忆创建成功！');
       form.resetFields(['title', 'content', 'created_at']);
-      // Keep the user_id field value
-      form.setFieldsValue({ user_id: values.user_id });
     } catch (error) {
       message.error('创建记忆失败，请重试');
     } finally {
@@ -46,14 +45,6 @@ const CreateMemory: React.FC = () => {
         layout="vertical"
         onFinish={onFinish}
       >
-        <Form.Item
-          name="user_id"
-          label="用户ID"
-          rules={[{ required: true, message: '请输入用户ID' }]}
-        >
-          <Input placeholder="请输入用户ID" />
-        </Form.Item>
-
         <Form.Item
           name="title"
           label="记忆标题"
@@ -91,4 +82,4 @@ const CreateMemory: React.FC = () => {
   );
 };
 
-export default CreateMemory; 
+export default CreateMemory;
