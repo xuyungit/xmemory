@@ -177,7 +177,8 @@ const MemoryList: React.FC = () => {
   // 处理手动刷新
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchMemories();
+    // 传递当前页码和每页条数，确保刷新当前页的数据
+    fetchMemories(pagination.current as number, pagination.pageSize as number);
   };
 
   // 处理记忆类型过滤变化
