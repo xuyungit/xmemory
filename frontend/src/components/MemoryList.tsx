@@ -133,7 +133,7 @@ const MemoryList: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user_id, sortInfo, memoryType, pagination]);
+  }, [user_id, sortInfo, memoryType]); // 移除pagination依赖，避免死循环
 
   useEffect(() => {
     const savedUserID = getUserID();
@@ -150,11 +150,9 @@ const MemoryList: React.FC = () => {
 
   // 监听分页状态变化，触发数据获取
   useEffect(() => {
-    // 这里不需要重复检查user_id，因为fetchMemories内部会检查
-    // 注意：这里不需要重新获取数据，因为pagination的变化会通过handleTableChange触发
-    // 这个effect主要是确保页码变化后能正确获取对应页面的数据
-    // 此处不做任何操作，依赖项保留完整以避免lint警告
-  }, [pagination, fetchMemories, user_id]);
+    // 这里不需要做任何事情，避免死循环
+    // 分页变化通过handleTableChange单独处理
+  }, []);
 
   // 处理表格分页、排序、筛选变化
   const handleTableChange = (
@@ -162,6 +160,7 @@ const MemoryList: React.FC = () => {
     filters: any,
     sorter: any,
   ) => {
+    // 先更新分页状态
     setPagination(pagination);
     
     // 处理排序
@@ -170,6 +169,9 @@ const MemoryList: React.FC = () => {
       const sortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
       setSortInfo({ sortBy, sortOrder });
     }
+    
+    // 加载对应页面的数据
+    fetchMemories(pagination.current as number, pagination.pageSize as number);
   };
 
   // 处理手动刷新
@@ -183,6 +185,8 @@ const MemoryList: React.FC = () => {
     setMemoryType(value);
     // 重置到第一页
     setPagination(prev => ({ ...prev, current: 1 }));
+    // 使用新的memoryType和页码1获取数据
+    fetchMemories(1, pagination.pageSize);
   };
 
   // 处理删除操作
