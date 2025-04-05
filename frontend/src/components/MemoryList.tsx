@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Typography, Spin, Empty, Table, TablePaginationConfig, Button, Space, Tooltip, Row, Col, Select } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { Spin, Empty, Table, TablePaginationConfig, Button, Space, Tooltip, Row, Col, Select, Modal, message } from 'antd';
+import { ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
-import { getMemories, PaginatedResponse } from '../services/memoryService';
+import { getMemories, deleteMemory, PaginatedResponse } from '../services/memoryService';
 import { getUserID } from '../utils/userStorage';
 import { getMemoryTypeOptions, MemoryTypeNames } from '../utils/memoryTypes';
 
@@ -14,6 +14,7 @@ interface Memory {
   created_at: string;
   memory_type: string;
   tags: string[];
+  _id?: string; // 添加_id字段，用于删除操作
 }
 
 const MemoryList: React.FC = () => {
@@ -22,6 +23,8 @@ const MemoryList: React.FC = () => {
   const [user_id, setUser_id] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
   const [memoryType, setMemoryType] = useState<string | null>("all");
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [deleting, setDeleting] = useState(false);
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 10,
@@ -94,30 +97,33 @@ const MemoryList: React.FC = () => {
     },
   ];
 
-  const fetchMemories = useCallback(async () => {
+  const fetchMemories = useCallback(async (page?: number, pageSize?: number) => {
     if (!user_id) return;
     
     try {
       setLoading(true);
-      const { current = 1, pageSize = 10 } = pagination;
+      // 使用传入的页码和每页数量，如果没有则从pagination中获取
+      const current = page || pagination.current || 1;
+      const size = pageSize || pagination.pageSize || 10;
       const { sortBy, sortOrder } = sortInfo;
       
       // 处理记忆类型筛选，仅当不是"全部"时传递参数
       const typeFilter = memoryType && memoryType !== "all" ? memoryType : undefined;
       
+      console.log(`获取第 ${current} 页数据，每页 ${size} 条`);
       const data: PaginatedResponse = await getMemories(
         user_id, 
         current as number, 
-        pageSize as number,
+        size as number,
         sortBy,
         sortOrder,
         typeFilter
       );
       
       setMemories(data.memories);
+      // 仅更新total和pageSize，不更新current避免分页被重置
       setPagination(prev => ({
         ...prev,
-        current: data.page,
         pageSize: data.page_size,
         total: data.total,
       }));
@@ -127,8 +133,7 @@ const MemoryList: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  // 增加 memoryType 作为依赖
-  }, [user_id, pagination.current, pagination.pageSize, sortInfo.sortBy, sortInfo.sortOrder, memoryType]);
+  }, [user_id, sortInfo, memoryType, pagination]);
 
   useEffect(() => {
     const savedUserID = getUserID();
@@ -142,6 +147,14 @@ const MemoryList: React.FC = () => {
       fetchMemories();
     }
   }, [user_id, fetchMemories]);
+
+  // 监听分页状态变化，触发数据获取
+  useEffect(() => {
+    // 这里不需要重复检查user_id，因为fetchMemories内部会检查
+    // 注意：这里不需要重新获取数据，因为pagination的变化会通过handleTableChange触发
+    // 这个effect主要是确保页码变化后能正确获取对应页面的数据
+    // 此处不做任何操作，依赖项保留完整以避免lint警告
+  }, [pagination, fetchMemories, user_id]);
 
   // 处理表格分页、排序、筛选变化
   const handleTableChange = (
@@ -170,6 +183,36 @@ const MemoryList: React.FC = () => {
     setMemoryType(value);
     // 重置到第一页
     setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  // 处理删除操作
+  const handleDelete = async () => {
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除选中的记忆吗？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        setDeleting(true);
+        try {
+          await Promise.all(selectedRowKeys.map(id => deleteMemory(id as string)));
+          message.success('删除成功');
+          setSelectedRowKeys([]);
+          // 保留当前页码，传递当前分页参数
+          fetchMemories(pagination.current as number, pagination.pageSize as number);
+        } catch (error) {
+          console.error('删除记忆失败:', error);
+          message.error('删除失败');
+        } finally {
+          setDeleting(false);
+        }
+      },
+    });
+  };
+
+  // 处理行选择变化
+  const handleRowSelectionChange = (selectedRowKeys: React.Key[]) => {
+    setSelectedRowKeys(selectedRowKeys);
   };
 
   return (
@@ -201,6 +244,17 @@ const MemoryList: React.FC = () => {
                 刷新
               </Button>
             </Tooltip>
+            <Tooltip title="删除选中的记忆">
+              <Button 
+                icon={<DeleteOutlined />} 
+                onClick={handleDelete}
+                disabled={selectedRowKeys.length === 0}
+                loading={deleting}
+                danger
+              >
+                删除
+              </Button>
+            </Tooltip>
           </Space>
         </Col>
       </Row>
@@ -215,7 +269,7 @@ const MemoryList: React.FC = () => {
         <Table 
           dataSource={memories} 
           columns={columns}
-          rowKey="id"
+          rowKey={(record) => record._id || record.id} // 优先使用 _id，如果不存在则使用 id
           pagination={{
             ...pagination,
             responsive: true, // 使分页组件自适应
@@ -227,6 +281,10 @@ const MemoryList: React.FC = () => {
           scroll={{ x: '100%' }} // 从 'max-content' 改为 '100%'，限制表格宽度
           style={{ overflowX: 'auto' }}
           loading={loading}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: handleRowSelectionChange,
+          }}
         />
       )}
     </div>

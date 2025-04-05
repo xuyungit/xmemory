@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Form, Input, Button, message, DatePicker } from 'antd';
 import { createMemory } from '../services/memoryService';
 import { getUserID } from '../utils/userStorage';
@@ -9,6 +9,16 @@ const { TextArea } = Input;
 const CreateMemory: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const contentInputRef = useRef<any>(null);
+  
+  useEffect(() => {
+    // 组件挂载后，将焦点设置到记忆内容输入框
+    if (contentInputRef.current) {
+      setTimeout(() => {
+        contentInputRef.current.focus();
+      }, 100);
+    }
+  }, []);
   
   const onFinish = async (values: any) => {
     try {
@@ -51,13 +61,6 @@ const CreateMemory: React.FC = () => {
         onFinish={onFinish}
       >
         <Form.Item
-          name="title"
-          label="记忆标题"
-        >
-          <Input placeholder="请输入记忆标题（可选）" />
-        </Form.Item>
-
-        <Form.Item
           name="content"
           label="记忆内容"
           rules={[{ required: true, message: '请输入记忆内容' }]}
@@ -65,8 +68,16 @@ const CreateMemory: React.FC = () => {
           <TextArea 
             rows={4} 
             placeholder="请输入记忆内容" 
-            style={{ resize: 'vertical' }} // 允许用户调整文本区域高度
+            style={{ resize: 'vertical' }}
+            ref={contentInputRef}
           />
+        </Form.Item>
+
+        <Form.Item
+          name="title"
+          label="记忆标题"
+        >
+          <Input placeholder="请输入记忆标题（可选）" />
         </Form.Item>
 
         <Form.Item

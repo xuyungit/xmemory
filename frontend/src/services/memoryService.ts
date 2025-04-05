@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getSessionId } from './authService';
+import { getUserID } from '../utils/userStorage';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api/v1';
 
@@ -28,6 +29,7 @@ export interface Memory {
   created_at: string;
   memory_type: string;
   tags: string[];
+  _id?: string; // 添加_id字段，确保从后端返回的_id被保存
 }
 
 export interface PaginatedResponse {
@@ -92,9 +94,11 @@ export const deleteMemory = async (
   memoryId: string, 
   userId?: string
 ): Promise<DeleteMemoryResponse> => {
+  // 使用当前登录的用户ID，如果没有提供特定的用户ID
+  const currentUserId = userId || getUserID();
   const response = await api.delete(`/memories/${memoryId}`, {
     params: {
-      user_id: userId,
+      user_id: currentUserId,
     },
   });
   return response.data;
