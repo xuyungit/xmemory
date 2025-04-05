@@ -30,6 +30,14 @@ export interface Memory {
   tags: string[];
 }
 
+export interface PaginatedResponse {
+  memories: Memory[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 export const createMemory = async (data: {
   user_id: string;
   title?: string;
@@ -41,13 +49,23 @@ export const createMemory = async (data: {
   return response.data;
 };
 
-export const getMemories = async (user_id?: string): Promise<Memory[]> => {
+export const getMemories = async (
+  user_id?: string,
+  page: number = 1,
+  pageSize: number = 10,
+  sortBy: string = 'created_at',
+  sortOrder: string = 'desc'
+): Promise<PaginatedResponse> => {
   const response = await api.get('/memories/', {
     params: {
       user_id,
+      page,
+      page_size: pageSize,
+      sort_by: sortBy,
+      sort_order: sortOrder,
     },
   });
-  return response.data.memories;
+  return response.data;
 };
 
 export const searchMemories = async (
@@ -61,4 +79,4 @@ export const searchMemories = async (
     },
   });
   return response.data.memories;
-}; 
+};
