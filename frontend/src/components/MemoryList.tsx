@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Typography, Spin, Empty, Table, TablePaginationConfig } from 'antd';
+import { Typography, Spin, Empty, Table, TablePaginationConfig, Button, Space, Tooltip, Row, Col } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
 import { getMemories, PaginatedResponse } from '../services/memoryService';
 import { getUserID } from '../utils/userStorage';
-
-const { Title } = Typography;
 
 interface Memory {
   id: string;
@@ -17,6 +16,7 @@ const MemoryList: React.FC = () => {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
   const [user_id, setUser_id] = useState<string>('');
+  const [refreshing, setRefreshing] = useState(false);
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 10,
@@ -90,8 +90,10 @@ const MemoryList: React.FC = () => {
       console.error('获取记忆列表失败:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [user_id, pagination.current, pagination.pageSize, sortInfo]);
+  // 只依赖必要的分页参数，而不是整个 pagination 对象
+  }, [user_id, pagination.current, pagination.pageSize, sortInfo.sortBy, sortInfo.sortOrder]);
 
   useEffect(() => {
     const savedUserID = getUserID();
@@ -122,11 +124,31 @@ const MemoryList: React.FC = () => {
     }
   };
 
+  // 处理手动刷新
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchMemories();
+  };
+
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Title level={2} style={{ textAlign: 'center', marginBottom: 24 }}>
-        记忆列表
-      </Title>
+      {/* 工具栏 */}
+      <Row justify="end" style={{ marginBottom: 16 }}>
+        <Col>
+          <Space>
+            {/* 这里可以添加更多筛选组件 */}
+            <Tooltip title="刷新记忆列表">
+              <Button 
+                icon={<ReloadOutlined />} 
+                onClick={handleRefresh}
+                loading={refreshing}
+              >
+                刷新
+              </Button>
+            </Tooltip>
+          </Space>
+        </Col>
+      </Row>
       
       {loading && memories.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '50px' }}>
