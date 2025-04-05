@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 import pytz
 from dateutil import parser
+import logging
 
 from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
@@ -28,6 +29,9 @@ class MemoryCreate(BaseModel):
 class MemoryIdResponse(BaseModel):
     id: str
 
+class DeleteMemoryResponse(BaseModel):
+    success: bool
+    message: str
 
 class APIMemoryDocument(BaseModel):
     id: Optional[str] = None
@@ -101,6 +105,49 @@ async def create_memory(memory: MemoryCreate):
         await update_insight_memory(memory_doc)
         return MemoryIdResponse(id=memory_id)
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{memory_id}", response_model=DeleteMemoryResponse)
+async def delete_memory(memory_id: str, user_id: Optional[str] = None):
+    """
+    删除指定ID的记忆数据
+    
+    Args:
+        memory_id: 要删除的记忆ID
+        user_id: 可选的用户ID，用于验证记忆所有权
+    """
+    try:
+        repo = MemoryRepository()
+        
+        # 如果提供了user_id，先检查记忆是否属于该用户
+        if user_id:
+            memory = await repo.get_memory(memory_id)
+            if not memory:
+                raise HTTPException(status_code=404, detail=f"记忆ID '{memory_id}' 不存在")
+                
+            if memory.user_id != user_id:
+                raise HTTPException(status_code=403, detail="没有权限删除此记忆")
+            
+            # 删除本地文件存储
+            try:
+                file_storage.delete_memory(memory_id, user_id)
+            except FileNotFoundError:
+                # 如果文件不存在，只记录日志，不影响整体删除流程
+                logging.warning(f"本地文件不存在: {memory_id} for user {user_id}")
+        
+        # 从 Elasticsearch 中删除记忆
+        success = await repo.delete_memory(memory_id)
+        if not success:
+            raise HTTPException(status_code=500, detail=f"删除记忆失败: {memory_id}")
+        
+        return DeleteMemoryResponse(
+            success=True, 
+            message=f"记忆 '{memory_id}' 已成功删除"
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

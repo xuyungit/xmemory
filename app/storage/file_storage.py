@@ -58,4 +58,25 @@ class FileStorage:
             raise FileNotFoundError(f"Memory file not found: {file_path}")
         
         with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f) 
+            return json.load(f)
+            
+    def delete_memory(self, memory_id: str, user_id: str) -> bool:
+        """
+        删除指定记忆的本地文件
+        
+        Args:
+            memory_id: 要删除的记忆ID
+            user_id: 记忆所属的用户ID
+            
+        Returns:
+            如果删除成功返回True
+            
+        Raises:
+            FileNotFoundError: 如果文件不存在
+        """
+        file_path = self.base_dir / user_id / f"{memory_id}.json"
+        if not file_path.exists():
+            raise FileNotFoundError(f"Memory file not found: {file_path}")
+            
+        os.remove(file_path)
+        return True

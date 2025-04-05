@@ -82,3 +82,20 @@ export const searchMemories = async (
   });
   return response.data.memories;
 };
+
+export interface DeleteMemoryResponse {
+  success: boolean;
+  message: string;
+}
+
+export const deleteMemory = async (
+  memoryId: string, 
+  userId?: string
+): Promise<DeleteMemoryResponse> => {
+  const response = await api.delete(`/memories/${memoryId}`, {
+    params: {
+      user_id: userId,
+    },
+  });
+  return response.data;
+};
