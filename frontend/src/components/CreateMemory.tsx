@@ -39,7 +39,12 @@ const CreateMemory: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+    <div style={{ 
+      maxWidth: 600, 
+      margin: '0 auto',
+      padding: '0 16px', // 添加水平内边距，提高小屏幕上的显示效果
+      width: '100%' // 确保容器可以收缩以适应小屏幕
+    }}>
       <Form
         form={form}
         layout="vertical"
@@ -57,7 +62,11 @@ const CreateMemory: React.FC = () => {
           label="记忆内容"
           rules={[{ required: true, message: '请输入记忆内容' }]}
         >
-          <TextArea rows={4} placeholder="请输入记忆内容" />
+          <TextArea 
+            rows={4} 
+            placeholder="请输入记忆内容" 
+            style={{ resize: 'vertical' }} // 允许用户调整文本区域高度
+          />
         </Form.Item>
 
         <Form.Item

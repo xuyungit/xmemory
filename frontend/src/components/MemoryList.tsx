@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Typography, Spin, Empty, Table, TablePaginationConfig, Button, Space, Tooltip, Row, Col, Select } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
+import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import { getMemories, PaginatedResponse } from '../services/memoryService';
 import { getUserID } from '../utils/userStorage';
 import { getMemoryTypeOptions, MemoryTypeNames } from '../utils/memoryTypes';
@@ -47,6 +48,7 @@ const MemoryList: React.FC = () => {
       render: (text: string) => new Date(text).toLocaleString(),
       sorter: true,
       defaultSortOrder: 'descend' as 'descend',
+      responsive: ['md' as Breakpoint], // 修复为 Breakpoint 类型
     },
     {
       title: '类型',
@@ -54,6 +56,7 @@ const MemoryList: React.FC = () => {
       key: 'memory_type',
       width: 100, // 减小类型列宽度，从120px到100px
       render: (type: string) => MemoryTypeNames[type] || type,
+      responsive: ['sm' as Breakpoint], // 修复为 Breakpoint 类型
     },
     {
       title: '内容',
@@ -61,7 +64,7 @@ const MemoryList: React.FC = () => {
       key: 'content',
       ellipsis: { showTitle: false },
       width: 'auto', // 添加这一行，让内容列自适应剩余宽度
-      render: (text: string) => (
+      render: (text: string, record: any) => (
         <Tooltip title={text.split('\n').map((line, i) => (
           <div key={i}>{line}</div>
         ))}>
@@ -78,6 +81,12 @@ const MemoryList: React.FC = () => {
             wordWrap: 'break-word', // 兼容性更好的长文本换行
             minWidth: '0', // 添加这一行，允许元素缩小到小于其内容尺寸
           }}>
+            {/* 在小屏幕上添加时间信息，因为时间列会被隐藏 */}
+            {window.innerWidth < 768 && (
+              <small style={{ display: 'block', color: '#999', marginBottom: 4 }}>
+                {new Date(record.created_at).toLocaleString()}
+              </small>
+            )}
             {text}
           </div>
         </Tooltip>
@@ -164,19 +173,24 @@ const MemoryList: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto' }}> {/* 将最大宽度从800px增加到1000px */}
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 8px' }}> {/* 添加内边距 */}
       {/* 工具栏 */}
-      <Row justify="space-between" style={{ marginBottom: 16 }}>
-        <Col>
+      <Row 
+        justify="space-between" 
+        style={{ marginBottom: 16 }}
+        gutter={[8, 8]} // 添加栅格间距，改善小屏幕显示
+        align="middle"
+      >
+        <Col xs={24} sm={12}>
           <Select
             placeholder="选择记忆类型"
-            style={{ width: 150 }}
+            style={{ width: '100%', maxWidth: 150 }}
             options={getMemoryTypeOptions()}
             value={memoryType || "all"}
             onChange={handleTypeChange}
           />
         </Col>
-        <Col>
+        <Col xs={24} sm={12} style={{ textAlign: 'right' }}>
           <Space>
             <Tooltip title="刷新记忆列表">
               <Button 
@@ -202,7 +216,11 @@ const MemoryList: React.FC = () => {
           dataSource={memories} 
           columns={columns}
           rowKey="id"
-          pagination={pagination}
+          pagination={{
+            ...pagination,
+            responsive: true, // 使分页组件自适应
+            size: window.innerWidth < 576 ? 'small' : 'default', // 小屏幕使用小尺寸分页
+          }}
           onChange={handleTableChange}
           bordered
           size="small"

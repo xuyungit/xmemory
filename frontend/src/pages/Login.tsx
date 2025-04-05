@@ -26,9 +26,16 @@ const Login: React.FC = () => {
       justifyContent: 'center', 
       alignItems: 'center', 
       minHeight: '100vh',
-      background: '#f0f2f5'
+      background: '#f0f2f5',
+      padding: '0 16px' // 添加水平内边距，避免在小屏幕上贴边
     }}>
-      <Card title="登录" style={{ width: 400 }}>
+      <Card 
+        title="登录" 
+        style={{ 
+          width: '100%', 
+          maxWidth: '400px' // 改为最大宽度而不是固定宽度
+        }}
+      >
         <Form
           name="login"
           onFinish={onFinish}
@@ -62,4 +69,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default Login;

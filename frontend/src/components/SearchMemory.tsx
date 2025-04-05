@@ -38,8 +38,19 @@ const SearchMemory: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Title level={2} style={{ textAlign: 'center', marginBottom: 24 }}>
+    <div style={{ 
+      maxWidth: 800, 
+      margin: '0 auto',
+      padding: '0 16px' // 添加水平内边距，提高小屏幕设备的显示效果
+    }}>
+      <Title 
+        level={2} 
+        style={{ 
+          textAlign: 'center', 
+          marginBottom: 24,
+          fontSize: 'calc(1.2rem + 1vw)' // 使用响应式字体大小
+        }}
+      >
         查找记忆
       </Title>
 
@@ -65,20 +76,29 @@ const SearchMemory: React.FC = () => {
       </Form>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '50px' }}>
+        <div style={{ textAlign: 'center', padding: '20px' }}>
           <Spin size="large" />
         </div>
       ) : memories.length === 0 ? (
         <Empty description="未找到相关记忆" />
       ) : (
         <List
-          grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 3, xl: 3, xxl: 3 }}
+          grid={{ 
+            gutter: 16, 
+            xs: 1,        // 超小屏幕设备上一行显示1个
+            sm: 1,        // 小屏幕设备上一行显示1个
+            md: 2,        // 中等屏幕上一行显示2个
+            lg: 3,        // 大屏幕上一行显示3个
+            xl: 3,        // 超大屏幕上一行显示3个
+            xxl: 3        // 超超大屏幕上一行显示3个
+          }}
           dataSource={memories}
           renderItem={(memory) => (
             <List.Item>
               <Card
                 title={memory.title || '无标题'}
                 extra={<small>{memory.user_id}</small>}
+                style={{ marginBottom: '16px' }} // 添加卡片间的垂直间距
               >
                 <Paragraph ellipsis={{ rows: 3, expandable: true, symbol: '展开' }}>
                   {memory.content}
