@@ -107,6 +107,7 @@ class MemoryDocument:
             "user_id": self.user_id,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
+            "processed": self.processed
         }
         if self.title:
             doc_dict["title"] = self.title
@@ -118,8 +119,6 @@ class MemoryDocument:
             doc_dict["related_ids"] = self.related_ids
         if self.embedding is not None:
             doc_dict["embedding"] = self.embedding
-        if self.processed:
-            doc_dict["processed"] = self.processed
         return doc_dict
 
     @classmethod

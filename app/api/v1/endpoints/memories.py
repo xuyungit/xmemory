@@ -102,7 +102,9 @@ async def create_memory(memory: MemoryCreate):
         file_storage.save_memory(memory_id, memory_data)
 
         # update insight memory
-        await update_insight_memory(memory_doc)
+        # we won't update insight memory here, we will do it in the background
+        # await update_insight_memory(memory_doc)
+
         return MemoryIdResponse(id=memory_id)
 
     except Exception as e:

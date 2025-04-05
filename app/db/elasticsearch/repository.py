@@ -127,7 +127,7 @@ class ElasticsearchRepository(Generic[T]):
         """Update a document by ID."""
         es = await self.es
         try:
-            print(f"Updating document {id} in {self.index_name} with: {document}")
+            # print(f"Updating document {id} in {self.index_name} with: {document}")
             result = await es.update(
                 index=self.index_name,
                 id=id,

@@ -112,7 +112,7 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
             query["_source"] = {"excludes": ["embedding"]}
 
         results = await self.search(query, size=size)
-        logging.info(f"Search results: {results}")
+        # logging.info(f"Search results: {results}")
         return [MemoryDocument.from_dict(doc) for doc in results]
 
     async def hybrid_search(
@@ -219,4 +219,49 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         # Get total count
         count = await self.count(query)
         
-        return [MemoryDocument.from_dict(doc) for doc in results], count 
+        return [MemoryDocument.from_dict(doc) for doc in results], count
+
+    async def get_unprocessed_memories(
+        self,
+        batch_size: int = 10, 
+        user_id: Optional[str] = None
+    ) -> List[MemoryDocument]:
+        """
+        查询未处理的原始记忆
+        
+        Args:
+            batch_size: 每次获取的记忆数量
+            user_id: 可选的用户ID过滤
+            
+        Returns:
+            List[MemoryDocument]: 未处理的记忆列表，按创建时间升序排序
+        """
+        try:
+            # 构建查询，查找未处理的RAW类型记忆
+            query = {
+                "bool": {
+                    "must": [
+                        {"term": {"memory_type": MemoryType.RAW.value}},
+                        {"term": {"processed": False}}
+                    ]
+                }
+            }
+            
+            # 如果指定了用户ID，添加过滤条件
+            if user_id:
+                query["bool"]["must"].append({"term": {"user_id": user_id}})
+            
+            # 添加按创建时间升序排序，确保优先处理最旧的记忆
+            sort_clause = [{"created_at": {"order": "asc"}}]
+            
+            # 执行查询
+            results = await self.search(query, size=batch_size, sort=sort_clause)
+            
+            # 转换为MemoryDocument对象
+            memory_docs = [MemoryDocument.from_dict(doc) for doc in results]
+            
+            return memory_docs
+        
+        except Exception as e:
+            logging.error(f"获取未处理记忆时出错: {str(e)}")
+            return []
