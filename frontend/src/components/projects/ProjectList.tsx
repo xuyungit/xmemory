@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, List, Typography, Spin, Empty, Button, Tooltip, Layout } from 'antd';
+import { Card, List, Typography, Spin, Empty, Button, Layout } from 'antd';
 import { FolderOutlined, PlusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { getProjects, Project } from '../../services/memoryService';
 import { getUserID } from '../../utils/userStorage';
-import AppHeader from '../common/AppHeader';
 
 const { Content } = Layout;
-const { Title, Paragraph } = Typography;
+const { Paragraph } = Typography;
 
 const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -53,77 +52,72 @@ const ProjectList: React.FC = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <AppHeader title="项目列表" />
-      <Content style={{ padding: '16px' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={() => console.log('创建新项目')} // TODO: 创建新项目功能
-            >
-              新建项目
-            </Button>
-          </div>
-          
-          {loading && projects.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <Spin size="large" />
-            </div>
-          ) : projects.length === 0 ? (
-            <Empty description="暂无项目" />
-          ) : (
-            <List
-              grid={{
-                gutter: 16,
-                xs: 1,
-                sm: 1,
-                md: 2,
-                lg: 3,
-                xl: 3,
-                xxl: 3,
-              }}
-              dataSource={projects}
-              renderItem={(project) => (
-                <List.Item>
-                  <Link to={`/projects/${project.id || project._id}`} style={{ display: 'block', width: '100%' }}>
-                    <Card 
-                      hoverable
-                      title={
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                          <FolderOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                          {project.title || '未命名项目'}
-                        </div>
-                      }
-                    >
-                      <Paragraph 
-                        ellipsis={{ rows: 3, expandable: false }} 
-                        style={{ marginBottom: 0 }}
-                      >
-                        {project.content}
-                      </Paragraph>
-                      <div style={{ marginTop: 16, fontSize: '12px', color: '#999' }}>
-                        创建于: {new Date(project.created_at).toLocaleDateString()}
-                      </div>
-                    </Card>
-                  </Link>
-                </List.Item>
-              )}
-              loadMore={
-                hasMore ? (
-                  <div style={{ textAlign: 'center', marginTop: 16 }}>
-                    <Button onClick={loadMoreProjects} loading={loading}>
-                      加载更多
-                    </Button>
-                  </div>
-                ) : null
-              }
-            />
-          )}
+    <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />} 
+          onClick={() => console.log('创建新项目')} // TODO: 创建新项目功能
+        >
+          新建项目
+        </Button>
+      </div>
+      
+      {loading && projects.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <Spin size="large" />
         </div>
-      </Content>
-    </Layout>
+      ) : projects.length === 0 ? (
+        <Empty description="暂无项目" />
+      ) : (
+        <List
+          grid={{
+            gutter: 16,
+            xs: 1,
+            sm: 1,
+            md: 2,
+            lg: 3,
+            xl: 3,
+            xxl: 3,
+          }}
+          dataSource={projects}
+          renderItem={(project) => (
+            <List.Item>
+              <Link to={`/projects/${project.id || project._id}`} style={{ display: 'block', width: '100%' }}>
+                <Card 
+                  hoverable
+                  title={
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <FolderOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+                      {project.title || '未命名项目'}
+                    </div>
+                  }
+                >
+                  <Paragraph 
+                    ellipsis={{ rows: 3, expandable: false }} 
+                    style={{ marginBottom: 0 }}
+                  >
+                    {project.content}
+                  </Paragraph>
+                  <div style={{ marginTop: 16, fontSize: '12px', color: '#999' }}>
+                    创建于: {new Date(project.created_at).toLocaleDateString()}
+                  </div>
+                </Card>
+              </Link>
+            </List.Item>
+          )}
+          loadMore={
+            hasMore ? (
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <Button onClick={loadMoreProjects} loading={loading}>
+                  加载更多
+                </Button>
+              </div>
+            ) : null
+          }
+        />
+      )}
+    </div>
   );
 };
 

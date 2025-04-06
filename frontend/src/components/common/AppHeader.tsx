@@ -3,7 +3,6 @@ import { Layout, Button, Space, Menu, Typography } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   HomeOutlined, 
-  PlusOutlined, 
   UnorderedListOutlined, 
   SearchOutlined, 
   ProjectOutlined, 
@@ -26,8 +25,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
   const getCurrentPath = () => {
     const path = location.pathname;
     if (path === '/') return 'home';
-    if (path.includes('/projects') && !path.includes('/projects/')) return 'projects';
-    if (path.includes('/projects/')) return 'project-detail';
+    if (path.includes('/memories')) return 'memories';
+    if (path.includes('/search')) return 'search';
+    if (path.includes('/projects')) return 'projects';
     return '';
   };
 
@@ -51,7 +51,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
       zIndex: 1000
     }}>
       {/* 左侧导航菜单 */}
-      <Space>
+      <Space wrap style={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start', overflow: 'auto' }}>
         <Button 
           icon={<HomeOutlined />} 
           type={getCurrentPath() === 'home' ? 'primary' : 'default'}
@@ -60,8 +60,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
           首页
         </Button>
         <Button 
+          icon={<UnorderedListOutlined />} 
+          type={getCurrentPath() === 'memories' ? 'primary' : 'default'}
+          onClick={() => navigate('/memories')}
+        >
+          记忆管理
+        </Button>
+        <Button 
+          icon={<SearchOutlined />} 
+          type={getCurrentPath() === 'search' ? 'primary' : 'default'}
+          onClick={() => navigate('/search')}
+        >
+          记忆搜索
+        </Button>
+        <Button 
           icon={<ProjectOutlined />} 
-          type={getCurrentPath() === 'projects' || getCurrentPath() === 'project-detail' ? 'primary' : 'default'}
+          type={getCurrentPath() === 'projects' ? 'primary' : 'default'}
           onClick={() => navigate('/projects')}
         >
           项目管理
@@ -70,7 +84,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
 
       {/* 中间标题 */}
       {title && (
-        <Title level={4} style={{ margin: 0, textAlign: 'center' }}>
+        <Title level={4} style={{ margin: 0, textAlign: 'center', flexShrink: 0 }}>
           {title}
         </Title>
       )}
@@ -80,6 +94,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
         type="text" 
         icon={<LogoutOutlined />} 
         onClick={handleLogout}
+        style={{ flexShrink: 0 }}
       >
         退出登录
       </Button>
