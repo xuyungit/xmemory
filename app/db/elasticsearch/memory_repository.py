@@ -167,16 +167,18 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         """Delete a memory document."""
         return await self.delete_document(id)
 
-    async def get_projects(self):
+    async def get_projects(self, user_id: Optional[str] = None) -> List[MemoryDocument]:
         """Get all projects."""
         docs, count = await self.list_memories(
             memory_type=MemoryType.PROJECT,
+            user_id=user_id,
             page=1,
             page_size=1000
         )
         if len(docs) != count:
             docs, _ = await self.list_memories(
                 memory_type=MemoryType.PROJECT,
+                user_id=user_id,
                 page=1,
                 page_size=count
             )

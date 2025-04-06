@@ -19,7 +19,7 @@ import pytz
 
 from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
-from app.llm.memory_agent import update_insight_memory
+from app.llm.memory_agent import process_raw_memory
 
 # Configure logging
 logging.basicConfig(
@@ -49,7 +49,7 @@ async def process_memory(memory_doc: MemoryDocument) -> bool:
         logger.info(f"处理记忆 ID: {memory_doc._id}, 用户: {memory_doc.user_id}, 记忆: {memory_doc.content}")
         
         # 使用记忆代理处理记忆
-        await update_insight_memory(memory_doc)
+        await process_raw_memory(memory_doc)
         
         # 更新记忆状态为已处理
         memory_doc.processed = True

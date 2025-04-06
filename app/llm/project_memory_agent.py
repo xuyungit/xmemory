@@ -61,9 +61,12 @@ async def list_projects() -> list[Project]:
 
     print("list_projects is called")
 
+    raw_memory = raw_memory_context.get()
+    user_id = raw_memory.user_id
+    print(f"list_projects is called with user_id: {user_id}")
     repo = MemoryRepository()
-    projects = await repo.get_projects()
-    projects = [Project(project_id=project.id, project_name=project.title, project_description=project.content) for project in projects]
+    projects = await repo.get_projects(user_id)
+    projects = [Project(project_id=project._id, project_name=project.title, project_description=project.content) for project in projects]
     return projects if projects else "No Projecte Created"
 
 async def create_project(project_name: str, project_description: str) -> str:
@@ -161,7 +164,35 @@ async def update_task(task_id: str, task_status: str) -> bool:
     print(f"update_task is called, task_id: {task_id}, task_status: {task_status}")
 
     return True
-    
+
+def get_project_memory_agent(raw_memory: MemoryDocument) -> Agent:
+    """
+    获取项目记忆代理
+    :return: Agent
+    """
+    raw_memory_context.set(raw_memory)
+    return Agent(
+        name="Project Memory Agent",
+        instructions=instructions,
+        handoff_description="Special Agent for project memory management, such as creating, updating, and listing projects and tasks.",
+        tools=[
+            function_tool(list_projects),
+            function_tool(create_project),
+            function_tool(update_project),
+            function_tool(list_tasks),
+            function_tool(create_task),
+            function_tool(update_task)
+        ],
+    )
+
+def clear_context():
+    """
+    清除上下文变量
+    :return: None
+    """
+    raw_memory_context.set(None)
+    print("Context cleared")
+
 async def update_project_memory(raw_memory: MemoryDocument):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     global instructions

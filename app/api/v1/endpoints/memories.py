@@ -11,7 +11,7 @@ from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
 from app.storage.file_storage import FileStorage
 
-from app.llm.memory_agent import update_insight_memory
+# from app.llm.memory_agent import update_insight_memory
 
 router = APIRouter()
 file_storage = FileStorage()
