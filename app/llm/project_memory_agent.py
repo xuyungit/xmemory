@@ -29,6 +29,9 @@ instructions = """
  1. Project ID: 项目ID，这个ID是项目的唯一标识
  2. Project Description: 项目描述，如果你认为需要更新项目的描述，可以使用这个参数，用一段清晰的话来描述这个项目，描述不超过300个字符。如果不需要更新参数，那么这个参数可以为空。
 
+注意：
+- 当你更新项目的Description的时候，你需要结合既有的项目描述的内容以及当前你新了解到的项目的内容来更新。更新后的内容应同时包含旧的描述中的关键信息（除非新的信息删除或者修改了旧的信息），且包含新的信息，应该比较完整、流畅和清晰，并且不丢失重要信息。类似一个追加并改写的过程。
+
 用户的信息中可能会包含项目的任务（Tasaks），你可以使用project_list_tasks工具来查找相关的项目任务。
 你可以使用project_create_task工具来创建一个新的项目任务。
 你可以使用project_update_task工具来更新一个项目任务的状态。
@@ -118,7 +121,7 @@ async def update_project(project_id: str, project_description: str) -> bool:
         return False
     if project_description:
         project.content = project_description
-    project.updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    project.updated_at = datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%dT%H:%M:%S%z')
     await repo.update_memory(project_id, project)
 
     return True
