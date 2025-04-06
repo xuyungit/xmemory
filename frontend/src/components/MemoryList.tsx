@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Spin, Empty, Table, TablePaginationConfig, Button, Space, Tooltip, Row, Col, Select, Modal, message } from 'antd';
 import { ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import { getMemories, deleteMemory, PaginatedResponse } from '../services/memoryService';
 import { getUserID } from '../utils/userStorage';
@@ -25,6 +26,7 @@ const MemoryList: React.FC = () => {
   const [memoryType, setMemoryType] = useState<string | null>("all");
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const navigate = useNavigate();
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 10,
@@ -224,7 +226,7 @@ const MemoryList: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 8px' }}> {/* 添加内边距 */}
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 8px' }}>
       {/* 工具栏 */}
       <Row 
         justify="space-between" 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, List, Card, Typography, Spin, Empty } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { searchMemories } from '../services/memoryService';
 import { getUserID } from '../utils/userStorage';
 
@@ -17,6 +18,7 @@ const SearchMemory: React.FC = () => {
   const [form] = Form.useForm();
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const onFinish = async (values: { searchText: string }) => {
     try {
@@ -44,14 +46,14 @@ const SearchMemory: React.FC = () => {
       padding: '0 16px' // 添加水平内边距，提高小屏幕设备的显示效果
     }}>
       <Title 
-        level={2} 
+        level={3} 
         style={{ 
           textAlign: 'center', 
           marginBottom: 24,
-          fontSize: 'calc(1.2rem + 1vw)' // 使用响应式字体大小
+          fontSize: 'calc(1.1rem + 0.5vw)' // 使用响应式字体大小
         }}
       >
-        查找记忆
+        搜索您的记忆
       </Title>
 
       <Form

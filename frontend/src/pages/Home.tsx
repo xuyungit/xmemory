@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
-import { Tabs, Layout, Button, Space } from 'antd';
-import { LogoutOutlined, ProjectOutlined } from '@ant-design/icons';
+import { Tabs, Layout } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import CreateMemory from '../components/CreateMemory';
 import MemoryList from '../components/MemoryList';
 import SearchMemory from '../components/SearchMemory';
-import { logout } from '../services/authService';
+import AppHeader from '../components/common/AppHeader';
 
-const { Content, Header } = Layout;
+const { Content } = Layout;
 
 const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState('1');
   const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
 
   const items = [
     {
@@ -38,34 +32,7 @@ const Home: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ 
-        background: '#fff', 
-        padding: '0 16px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-        height: '48px',
-        lineHeight: '48px'
-      }}>
-        <div>
-          <Button 
-            type="primary" 
-            icon={<ProjectOutlined />} 
-            onClick={() => navigate('/projects')}
-          >
-            项目管理
-          </Button>
-        </div>
-        <Button 
-          type="text" 
-          icon={<LogoutOutlined />} 
-          onClick={handleLogout}
-          style={{ padding: '0 4px' }}
-        >
-          退出登录
-        </Button>
-      </Header>
+      <AppHeader title="记忆管理" />
       <Content style={{ padding: '16px' }}>
         <Tabs
           activeKey={activeTab}

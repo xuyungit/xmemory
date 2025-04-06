@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Form, Input, Button, message, DatePicker } from 'antd';
+import { Form, Input, Button, message, DatePicker, Typography } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { createMemory } from '../services/memoryService';
 import { getUserID } from '../utils/userStorage';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
+const { Title } = Typography;
 
 const CreateMemory: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const contentInputRef = useRef<any>(null);
+  const navigate = useNavigate();
   
   useEffect(() => {
     // 组件挂载后，将焦点设置到记忆内容输入框
@@ -52,9 +55,20 @@ const CreateMemory: React.FC = () => {
     <div style={{ 
       maxWidth: 600, 
       margin: '0 auto',
-      padding: '0 16px', // 添加水平内边距，提高小屏幕上的显示效果
-      width: '100%' // 确保容器可以收缩以适应小屏幕
+      padding: '0 16px',
+      width: '100%'
     }}>
+      <Title 
+        level={3} 
+        style={{ 
+          textAlign: 'center', 
+          marginBottom: 24,
+          fontSize: 'calc(1.1rem + 0.5vw)'
+        }}
+      >
+        记录新记忆
+      </Title>
+      
       <Form
         form={form}
         layout="vertical"

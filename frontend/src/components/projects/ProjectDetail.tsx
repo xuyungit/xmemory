@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Card, Button, Space, Spin, Divider, message, Tooltip, Modal, Form, Input, Breadcrumb } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, HomeOutlined, ProjectOutlined } from '@ant-design/icons';
+import { Typography, Card, Button, Space, Spin, Divider, message, Tooltip, Modal, Form, Input, Layout } from 'antd';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { getProjectDetail, deleteMemory, Project, updateMemory } from '../../services/memoryService';
 import TaskList from './TaskList';
+import AppHeader from '../common/AppHeader';
 
+const { Content } = Layout;
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
 
@@ -97,138 +99,131 @@ const ProjectDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
-        <Spin size="large" />
-      </div>
+      <Layout style={{ minHeight: '100vh' }}>
+        <AppHeader title="项目详情" />
+        <Content style={{ padding: '16px' }}>
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <Spin size="large" />
+          </div>
+        </Content>
+      </Layout>
     );
   }
 
   if (!project) {
-    return null;
+    return (
+      <Layout style={{ minHeight: '100vh' }}>
+        <AppHeader title="项目详情" />
+        <Content style={{ padding: '16px' }}>
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            项目不存在
+          </div>
+        </Content>
+      </Layout>
+    );
   }
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 16px' }}>
-      {/* 导航面包屑 */}
-      <Breadcrumb 
-        style={{ marginBottom: 16 }}
-        items={[
-          {
-            title: (
-              <a onClick={() => navigate('/')}>
-                <HomeOutlined style={{ marginRight: 4 }} />
-                <span>首页</span>
-              </a>
-            )
-          },
-          {
-            title: (
-              <a onClick={() => navigate('/projects')}>
-                <ProjectOutlined style={{ marginRight: 4 }} />
-                <span>项目列表</span>
-              </a>
-            )
-          },
-          {
-            title: <span>{project.title || '项目详情'}</span>
-          }
-        ]}
-      />
-      
-      {/* 操作栏 */}
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-        <Space>
-          <Tooltip title="编辑项目">
-            <Button 
-              icon={<EditOutlined />} 
-              onClick={showEditModal}
-            >
-              编辑
-            </Button>
-          </Tooltip>
-          <Tooltip title="删除项目">
-            <Button 
-              danger 
-              icon={<DeleteOutlined />} 
-              onClick={handleDeleteProject}
-              loading={deleteLoading}
-            >
-              删除
-            </Button>
-          </Tooltip>
-        </Space>
-      </div>
-      
-      {/* 项目详情卡片 */}
-      <Card>
-        <Title level={2}>{project.title || '未命名项目'}</Title>
-        <Paragraph style={{ whiteSpace: 'pre-line' }}>
-          {project.content}
-        </Paragraph>
-        <div style={{ fontSize: '14px', color: '#666' }}>
-          <div>创建于: {new Date(project.created_at).toLocaleString()}</div>
-          {project.updated_at && project.updated_at !== project.created_at && (
-            <div>更新于: {new Date(project.updated_at).toLocaleString()}</div>
-          )}
-        </div>
-      </Card>
-      
-      {/* 项目任务列表 */}
-      <Divider orientation="left">项目任务</Divider>
-      <TaskList projectId={projectId} />
-
-      {/* 编辑项目模态框 */}
-      <Modal
-        title="编辑项目"
-        open={editModalVisible}
-        onCancel={() => setEditModalVisible(false)}
-        footer={null}
-        destroyOnClose
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleEditProject}
-        >
-          <Form.Item
-            name="title"
-            label="项目名称"
-            rules={[{ required: true, message: '请输入项目名称' }]}
-          >
-            <Input placeholder="请输入项目名称" />
-          </Form.Item>
+    <Layout style={{ minHeight: '100vh' }}>
+      <AppHeader title={project.title || "项目详情"} />
+      <Content style={{ padding: '16px' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          {/* 操作栏 */}
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+            <Space>
+              <Tooltip title="编辑项目">
+                <Button 
+                  icon={<EditOutlined />} 
+                  onClick={showEditModal}
+                >
+                  编辑
+                </Button>
+              </Tooltip>
+              <Tooltip title="删除项目">
+                <Button 
+                  danger 
+                  icon={<DeleteOutlined />} 
+                  onClick={handleDeleteProject}
+                  loading={deleteLoading}
+                >
+                  删除
+                </Button>
+              </Tooltip>
+            </Space>
+          </div>
           
-          <Form.Item
-            name="content"
-            label="项目描述"
-            rules={[{ required: true, message: '请输入项目描述' }]}
-          >
-            <TextArea 
-              placeholder="请输入项目描述" 
-              autoSize={{ minRows: 4, maxRows: 8 }}
-            />
-          </Form.Item>
-          
-          <Form.Item>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button 
-                style={{ marginRight: 8 }} 
-                onClick={() => setEditModalVisible(false)}
-              >
-                取消
-              </Button>
-              <Button 
-                type="primary" 
-                htmlType="submit"
-                loading={editLoading}
-              >
-                保存
-              </Button>
+          {/* 项目详情卡片 */}
+          <Card>
+            <Title level={2}>{project.title || '未命名项目'}</Title>
+            <Paragraph style={{ whiteSpace: 'pre-line' }}>
+              {project.content}
+            </Paragraph>
+            <div style={{ fontSize: '14px', color: '#666' }}>
+              <div>创建于: {new Date(project.created_at).toLocaleString()}</div>
+              {project.updated_at && project.updated_at !== project.created_at && (
+                <div>更新于: {new Date(project.updated_at).toLocaleString()}</div>
+              )}
             </div>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+          </Card>
+          
+          {/* 项目任务列表 */}
+          <Divider orientation="left">项目任务</Divider>
+          <TaskList projectId={projectId} />
+
+          {/* 编辑项目模态框 */}
+          <Modal
+            title="编辑项目"
+            open={editModalVisible}
+            onCancel={() => setEditModalVisible(false)}
+            footer={null}
+            destroyOnClose
+          >
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleEditProject}
+            >
+              <Form.Item
+                name="title"
+                label="项目名称"
+                rules={[{ required: true, message: '请输入项目名称' }]}
+              >
+                <Input placeholder="请输入项目名称" />
+              </Form.Item>
+              
+              <Form.Item
+                name="content"
+                label="项目描述"
+                rules={[{ required: true, message: '请输入项目描述' }]}
+              >
+                <TextArea 
+                  placeholder="请输入项目描述" 
+                  autoSize={{ minRows: 4, maxRows: 8 }}
+                />
+              </Form.Item>
+              
+              <Form.Item>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button 
+                    style={{ marginRight: 8 }} 
+                    onClick={() => setEditModalVisible(false)}
+                  >
+                    取消
+                  </Button>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit"
+                    loading={editLoading}
+                  >
+                    保存
+                  </Button>
+                </div>
+              </Form.Item>
+            </Form>
+          </Modal>
+        </div>
+      </Content>
+    </Layout>
   );
 };
 
