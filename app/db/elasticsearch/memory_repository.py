@@ -185,6 +185,26 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         
         return docs
 
+    async def get_tasks(self, user_id: str, project_id: str) -> List[MemoryDocument]:
+        """Get all tasks for a specific project."""
+        query = {
+            "bool": {
+                "must": [
+                    {"term": {"parent_id": project_id}},
+                    {"term": {"user_id": user_id}},
+                    {"term": {"memory_type": MemoryType.TASK.value}}
+                ]
+            }
+        }
+        count = await self.count(query)
+        if count == 0:
+            return []
+
+        results = await self.search(query, size=count, sort=[{"created_at": {"order": "asc"}}])
+        if not results:
+            return []
+        return [MemoryDocument.from_dict(doc) for doc in results]
+
     async def list_memories(
         self,
         memory_type: Optional[MemoryType] = None,

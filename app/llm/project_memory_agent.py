@@ -10,7 +10,6 @@ from agents.models.openai_provider import OpenAIProvider
 from app.core.config import settings
 from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
-from app.storage.file_storage import FileStorage
 
 # 创建一个上下文变量来存储 raw_memory
 # 与全局变量不同，contextvars 为每个异步任务提供独立的上下文
@@ -18,7 +17,7 @@ from app.storage.file_storage import FileStorage
 raw_memory_context = contextvars.ContextVar('raw_memory', default=None)
 
 instructions = """
- 你是一个专业的项目信息管理的助手，你将收到段用户的原始文本信息，你需要判断这段原始的信息是否属于一个项目，为此，你可能需要使用list_projects工具来查找相关的项目。
+ 你是一个专业的项目信息管理的助手，你将收到一段用户的原始文本信息，你需要判断这段原始的信息是否属于一个项目，为此，你可能需要使用list_projects工具来查找相关的项目。
  如果原始信息属于一个项目，你需要判断这个项目是否已经存在，如果存在，你需要更新这个项目的信息，否则你需要创建一个新的项目。
  在创建项目的时候，应该使用project_create工具来创建一个新的项目。
  在更新项目的时候，应该使用project_update工具来更新这个项目的信息。
@@ -32,9 +31,10 @@ instructions = """
 注意：
 - 当你更新项目的Description的时候，你需要结合既有的项目描述的内容以及当前你新了解到的项目的内容来更新。更新后的内容应同时包含旧的描述中的关键信息（除非新的信息删除或者修改了旧的信息），且包含新的信息，应该比较完整、流畅和清晰，并且不丢失重要信息。类似一个追加并改写的过程。
 
-用户的信息中可能会包含项目的任务（Tasaks），你可以使用project_list_tasks工具来查找相关的项目任务。
-你可以使用project_create_task工具来创建一个新的项目任务。
-你可以使用project_update_task工具来更新一个项目任务的状态。
+你收到的原始信息中中可能会包含项目的任务（Tasks）相关的描述，你要根据这些描述，使用工具来管理该项目是的任务：
+- 你可以使用list_tasks工具来查找项目相关的任务。
+- 你可以使用create_task工具为项目来创建一个新的任务。
+- 你可以使用update_task工具为项目更新一个现有任务的状态。
 """
 
 class Project(BaseModel):
@@ -136,13 +136,14 @@ async def list_tasks(project_id: str) -> list[Task]:
     """
 
     print(f"list_tasks is called, project_id: {project_id}")
-    task1 = Task(task_id="1", task_description="Task 1", task_status="To Do")
-    task2 = Task(task_id="2", task_description="Task 2", task_status="In Progress")
-    return [task1, task2]
+    repo = MemoryRepository()
+    docs = await repo.get_tasks(user_id=raw_memory_context.get().user_id, project_id=project_id)
+    tasks = [Task(task_id=doc._id, task_description=doc.content, task_status=doc.summary) for doc in docs]
+    return tasks if tasks else "No Tasks Found"
 
 async def create_task(project_id: str, task_description: str) -> str:
     """
-    A tool to create a new task.
+    A tool to create a new task. The status of the task is "To Do" by default.
     Args:
         project_id: str, the id of the project
         task_description: str, the description of the task
@@ -151,8 +152,25 @@ async def create_task(project_id: str, task_description: str) -> str:
     """
 
     print(f"create_task is called, project_id: {project_id}, task_description: {task_description}")
-
-    return "1234567890"
+    doc = MemoryDocument(
+        user_id=raw_memory_context.get().user_id,
+        title=task_description,
+        content=task_description,
+        memory_type=MemoryType.TASK,
+        summary=TaskStatus.TO_DO,
+        parent_id=project_id,
+        tags=[],
+        created_at=datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%dT%H:%M:%S%z'),
+        updated_at=datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%dT%H:%M:%S%z'),
+        processed=True
+    )
+    repo = MemoryRepository()
+    task_id = await repo.create_memory(doc)
+    if not task_id:
+        print(f"Failed to create task: {task_description}")
+        return "Failed to create task"
+    print(f"Task created with ID: {task_id}")
+    return "task created successfully, task_id: " + task_id
 
 async def update_task(task_id: str, task_status: str) -> bool:
     """
@@ -165,6 +183,17 @@ async def update_task(task_id: str, task_status: str) -> bool:
     """
 
     print(f"update_task is called, task_id: {task_id}, task_status: {task_status}")
+    repo = MemoryRepository()
+    task = await repo.get_memory(task_id)
+    if not task:
+        print(f"task_id: {task_id} not found")
+        return False
+    if task_status not in TaskStatus.__members__:
+        print(f"Invalid task status: {task_status}")
+        return False
+    task.summary = task_status
+    task.updated_at = datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%dT%H:%M:%S%z')
+    await repo.update_memory(task_id, task)
 
     return True
 
