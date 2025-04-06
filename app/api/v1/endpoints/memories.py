@@ -266,3 +266,42 @@ async def vector_search(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{memory_id}", response_model=APIMemoryDocument)
+async def get_memory_detail(memory_id: str, user_id: Optional[str] = None):
+    """
+    获取指定ID的记忆详情
+    
+    Args:
+        memory_id: 要获取的记忆ID
+        user_id: 可选的用户ID，用于验证记忆所有权
+    """
+    try:
+        repo = MemoryRepository()
+        memory = await repo.get_memory(memory_id)
+        
+        if not memory:
+            raise HTTPException(status_code=404, detail=f"记忆ID '{memory_id}' 不存在")
+            
+        # 如果提供了user_id，检查记忆是否属于该用户
+        if user_id and memory.user_id != user_id:
+            raise HTTPException(status_code=403, detail="没有权限访问此记忆")
+        
+        return APIMemoryDocument(
+            id=memory._id,
+            content=memory.content,
+            memory_type=memory.memory_type,
+            tags=memory.tags,
+            user_id=memory.user_id,
+            title=memory.title,
+            summary=memory.summary,
+            parent_id=memory.parent_id,
+            related_ids=memory.related_ids,
+            created_at=memory.created_at,
+            updated_at=memory.updated_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

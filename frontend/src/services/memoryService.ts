@@ -27,6 +27,7 @@ export interface Memory {
   title?: string;
   content: string;
   created_at: string;
+  updated_at?: string; // 添加updated_at字段
   memory_type: string;
   tags: string[];
   _id?: string; // 添加_id字段，确保从后端返回的_id被保存
@@ -38,6 +39,17 @@ export interface PaginatedResponse {
   page: number;
   page_size: number;
   total_pages: number;
+}
+
+export interface Project extends Memory {
+  // 项目特有属性，记忆类型为 project
+  // 项目名称即为 title，项目描述即为 content
+}
+
+export interface Task extends Memory {
+  // 任务特有属性，记忆类型为 task
+  parent_id: string; // 所属项目ID
+  summary?: string; // 任务状态
 }
 
 export const createMemory = async (data: {
@@ -102,4 +114,76 @@ export const deleteMemory = async (
     },
   });
   return response.data;
+};
+
+// 新增项目管理相关API
+
+/**
+ * 获取项目列表
+ * 通过筛选 memory_type=project 的记忆来获取
+ */
+export const getProjects = async (
+  user_id?: string,
+  page: number = 1,
+  pageSize: number = 20,
+  sortBy: string = 'created_at',
+  sortOrder: string = 'desc'
+): Promise<PaginatedResponse> => {
+  return await getMemories(
+    user_id,
+    page,
+    pageSize,
+    sortBy,
+    sortOrder,
+    'project' // 指定memory_type为project
+  );
+};
+
+/**
+ * 获取项目详情
+ * @param projectId 项目ID
+ */
+export const getProjectDetail = async (projectId: string): Promise<Project | null> => {
+  try {
+    const repo = await api.get(`/memories/${projectId}`);
+    return repo.data as Project;
+  } catch (error) {
+    console.error('获取项目详情失败:', error);
+    return null;
+  }
+};
+
+/**
+ * 获取项目的任务列表
+ * 通过筛选 memory_type=task 且 parent_id=项目ID 的记忆来获取
+ * @param projectId 项目ID
+ * @param user_id 用户ID
+ */
+export const getProjectTasks = async (
+  projectId: string,
+  user_id?: string
+): Promise<Task[]> => {
+  try {
+    // 获取当前用户ID
+    const currentUserId = user_id || getUserID();
+    if (!currentUserId) {
+      throw new Error('用户未登录');
+    }
+    
+    // 使用API查询与项目相关的任务
+    const response = await api.get('/memories/', {
+      params: {
+        user_id: currentUserId,
+        memory_type: 'task',
+        parent_id: projectId,
+        page_size: 100, // 获取足够多的结果
+      },
+    });
+    
+    // 返回任务列表
+    return response.data.memories as Task[];
+  } catch (error) {
+    console.error('获取项目任务失败:', error);
+    return [];
+  }
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs, Layout, Button, Space } from 'antd';
-import { LogoutOutlined } from '@ant-design/icons';
+import { LogoutOutlined, ProjectOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import CreateMemory from '../components/CreateMemory';
 import MemoryList from '../components/MemoryList';
@@ -42,12 +42,21 @@ const Home: React.FC = () => {
         background: '#fff', 
         padding: '0 16px',
         display: 'flex',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         alignItems: 'center',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-        height: '40px',
-        lineHeight: '40px'
+        height: '48px',
+        lineHeight: '48px'
       }}>
+        <div>
+          <Button 
+            type="primary" 
+            icon={<ProjectOutlined />} 
+            onClick={() => navigate('/projects')}
+          >
+            项目管理
+          </Button>
+        </div>
         <Button 
           type="text" 
           icon={<LogoutOutlined />} 
@@ -69,4 +78,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home; 
+export default Home;
