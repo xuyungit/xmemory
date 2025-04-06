@@ -102,6 +102,30 @@ export interface DeleteMemoryResponse {
   message: string;
 }
 
+export interface MemoryUpdateData {
+  content?: string;
+  tags?: string[];
+  title?: string;
+  summary?: string;
+  parent_id?: string;
+  related_ids?: string[];
+}
+
+export const updateMemory = async (
+  memoryId: string,
+  updateData: MemoryUpdateData,
+  userId?: string
+): Promise<Memory> => {
+  // 使用当前登录的用户ID，如果没有提供特定的用户ID
+  const currentUserId = userId || getUserID();
+  const response = await api.put(`/memories/${memoryId}`, updateData, {
+    params: {
+      user_id: currentUserId,
+    },
+  });
+  return response.data;
+};
+
 export const deleteMemory = async (
   memoryId: string, 
   userId?: string

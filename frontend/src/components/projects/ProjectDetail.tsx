@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Card, Button, Space, Spin, Divider, message, Tooltip } from 'antd';
+import { Typography, Card, Button, Space, Spin, Divider, message, Tooltip, Modal, Form, Input } from 'antd';
 import { ArrowLeftOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getProjectDetail, deleteMemory, Project } from '../../services/memoryService';
+import { getProjectDetail, deleteMemory, Project, updateMemory } from '../../services/memoryService';
 import TaskList from './TaskList';
 
 const { Title, Paragraph } = Typography;
+const { TextArea } = Input;
 
 const ProjectDetail: React.FC = () => {
   const { projectId = '' } = useParams<{ projectId: string }>();
@@ -13,6 +14,9 @@ const ProjectDetail: React.FC = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [form] = Form.useForm();
 
   const fetchProjectDetail = useCallback(async () => {
     try {
@@ -56,6 +60,41 @@ const ProjectDetail: React.FC = () => {
     }
   };
 
+  const showEditModal = () => {
+    if (!project) return;
+    
+    // 初始化表单数据
+    form.setFieldsValue({
+      title: project.title || '',
+      content: project.content || '',
+    });
+    
+    setEditModalVisible(true);
+  };
+
+  const handleEditProject = async (values: { title: string; content: string }) => {
+    if (!project || !projectId) return;
+    
+    try {
+      setEditLoading(true);
+      
+      // 使用updateMemory方法更新项目
+      const updatedProject = await updateMemory(projectId, {
+        title: values.title,
+        content: values.content,
+      });
+      
+      setProject(updatedProject as Project);
+      setEditModalVisible(false);
+      message.success('项目更新成功');
+    } catch (error) {
+      console.error('更新项目失败:', error);
+      message.error('更新项目失败');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
@@ -83,7 +122,7 @@ const ProjectDetail: React.FC = () => {
           <Tooltip title="编辑项目">
             <Button 
               icon={<EditOutlined />} 
-              onClick={() => console.log('编辑项目')} // TODO: 实现编辑项目功能
+              onClick={showEditModal}
             >
               编辑
             </Button>
@@ -118,6 +157,58 @@ const ProjectDetail: React.FC = () => {
       {/* 项目任务列表 */}
       <Divider orientation="left">项目任务</Divider>
       <TaskList projectId={projectId} />
+
+      {/* 编辑项目模态框 */}
+      <Modal
+        title="编辑项目"
+        open={editModalVisible}
+        onCancel={() => setEditModalVisible(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleEditProject}
+        >
+          <Form.Item
+            name="title"
+            label="项目名称"
+            rules={[{ required: true, message: '请输入项目名称' }]}
+          >
+            <Input placeholder="请输入项目名称" />
+          </Form.Item>
+          
+          <Form.Item
+            name="content"
+            label="项目描述"
+            rules={[{ required: true, message: '请输入项目描述' }]}
+          >
+            <TextArea 
+              placeholder="请输入项目描述" 
+              autoSize={{ minRows: 4, maxRows: 8 }}
+            />
+          </Form.Item>
+          
+          <Form.Item>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button 
+                style={{ marginRight: 8 }} 
+                onClick={() => setEditModalVisible(false)}
+              >
+                取消
+              </Button>
+              <Button 
+                type="primary" 
+                htmlType="submit"
+                loading={editLoading}
+              >
+                保存
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
