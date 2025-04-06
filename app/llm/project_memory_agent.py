@@ -35,6 +35,12 @@ instructions = """
 - 你可以使用list_tasks工具来查找项目相关的任务。
 - 你可以使用create_task工具为项目来创建一个新的任务。
 - 你可以使用update_task工具为项目更新一个现有任务的状态。
+
+重要：
+- 你要区分需要修改项目的描述还是项目的任务项，项目的描述主要指项目的目标、范围等，不包括任务项和和任务的状态。
+- 如果涉及任务项的更新，请使用update_task工具来更新任务项的状态，或者创建新的任务。
+- 如果涉及项目的描述的更新，请使用update_project工具来更新项目的描述。
+
 """
 
 class Project(BaseModel):
@@ -51,7 +57,7 @@ class TaskStatus(str, Enum):
 class Task(BaseModel):
     task_id: str
     task_description: str
-    task_status: TaskStatus
+    task_status: str
 
 async def list_projects() -> list[Project]:
     """
@@ -138,8 +144,14 @@ async def list_tasks(project_id: str) -> list[Task]:
     print(f"list_tasks is called, project_id: {project_id}")
     repo = MemoryRepository()
     docs = await repo.get_tasks(user_id=raw_memory_context.get().user_id, project_id=project_id)
+    if not docs:
+        print(f"project_id: {project_id} not found")
+        return "No Tasks Found"
     tasks = [Task(task_id=doc._id, task_description=doc.content, task_status=doc.summary) for doc in docs]
-    return tasks if tasks else "No Tasks Found"
+    tasks = [f"- {task.task_id}: {task.task_description}, status: {task.task_status}" for task in tasks]
+    ret = "\n".join(tasks)
+    print(f"list_tasks result: {ret}")
+    return ret
 
 async def create_task(project_id: str, task_description: str) -> str:
     """
@@ -172,14 +184,17 @@ async def create_task(project_id: str, task_description: str) -> str:
     print(f"Task created with ID: {task_id}")
     return "task created successfully, task_id: " + task_id
 
-async def update_task(task_id: str, task_status: str) -> bool:
+async def update_task(task_id: str, task_status: str) -> str:
     """
-    A tool to update a task.
+    此工具用于更新任务的状态。
+
     Args:
-        task_id: str, the id of the task
-        task_status: str, the status of the task
+        task_id: str, 任务的唯一标识符
+        task_status: 任务的新状态，可以是 "To Do"、"In Progress"、"Done" 或 "Deleted"
+
     Returns:
-        bool, True if the task is updated successfully, False otherwise
+        bool, 如果任务更新成功则返回True，否则返回False
+
     """
 
     print(f"update_task is called, task_id: {task_id}, task_status: {task_status}")
@@ -187,15 +202,15 @@ async def update_task(task_id: str, task_status: str) -> bool:
     task = await repo.get_memory(task_id)
     if not task:
         print(f"task_id: {task_id} not found")
-        return False
-    if task_status not in TaskStatus.__members__:
+        return "Task not found" 
+    if task_status not in [status.value for status in TaskStatus]:
         print(f"Invalid task status: {task_status}")
-        return False
+        return (f"Invalid task status: {task_status}, valid values are: {[status.value for status in TaskStatus]}")
     task.summary = task_status
     task.updated_at = datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%dT%H:%M:%S%z')
     await repo.update_memory(task_id, task)
 
-    return True
+    return "Task updated successfully"
 
 def get_project_memory_agent(raw_memory: MemoryDocument) -> Agent:
     """
