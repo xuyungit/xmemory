@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Card, Button, Space, Spin, Divider, message, Tooltip, Modal, Form, Input } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Typography, Card, Button, Space, Spin, Divider, message, Tooltip, Modal, Form, Input, Breadcrumb } from 'antd';
+import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, HomeOutlined, ProjectOutlined } from '@ant-design/icons';
 import { getProjectDetail, deleteMemory, Project, updateMemory } from '../../services/memoryService';
 import TaskList from './TaskList';
 
@@ -109,15 +109,34 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 16px' }}>
-      {/* 返回按钮和操作栏 */}
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/projects')}
-        >
-          返回项目列表
-        </Button>
-        
+      {/* 导航面包屑 */}
+      <Breadcrumb 
+        style={{ marginBottom: 16 }}
+        items={[
+          {
+            title: (
+              <a onClick={() => navigate('/')}>
+                <HomeOutlined style={{ marginRight: 4 }} />
+                <span>首页</span>
+              </a>
+            )
+          },
+          {
+            title: (
+              <a onClick={() => navigate('/projects')}>
+                <ProjectOutlined style={{ marginRight: 4 }} />
+                <span>项目列表</span>
+              </a>
+            )
+          },
+          {
+            title: <span>{project.title || '项目详情'}</span>
+          }
+        ]}
+      />
+      
+      {/* 操作栏 */}
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         <Space>
           <Tooltip title="编辑项目">
             <Button 

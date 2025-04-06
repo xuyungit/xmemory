@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, List, Typography, Spin, Empty, Button, Tooltip } from 'antd';
-import { FolderOutlined, PlusOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
+import { FolderOutlined, PlusOutlined, HomeOutlined } from '@ant-design/icons';
+import { Link, useNavigate } from 'react-router-dom';
 import { getProjects, Project } from '../../services/memoryService';
 import { getUserID } from '../../utils/userStorage';
 
@@ -12,6 +12,7 @@ const ProjectList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const navigate = useNavigate();
   
   useEffect(() => {
     fetchProjects();
@@ -52,8 +53,17 @@ const ProjectList: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={2}>项目列表</Title>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Button 
+            icon={<HomeOutlined />} 
+            onClick={() => navigate('/')}
+            style={{ marginRight: 16 }}
+          >
+            返回主页
+          </Button>
+          <Title level={2} style={{ margin: 0 }}>项目列表</Title>
+        </div>
         <Button 
           type="primary" 
           icon={<PlusOutlined />} 

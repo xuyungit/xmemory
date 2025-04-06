@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { List, Card, Tag, Button, Tooltip, Modal, Form, Input, Select, message, Empty, Spin } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getProjectTasks, Task, deleteMemory } from '../../services/memoryService';
+import { getProjectTasks, Task, deleteMemory, updateMemory } from '../../services/memoryService';
 import { getUserID } from '../../utils/userStorage';
 
 interface TaskListProps {
@@ -62,7 +62,6 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
   const handleEditTask = (task: Task) => {
     setCurrentTask(task);
     form.setFieldsValue({
-      title: task.title,
       content: task.content,
       status: task.summary || 'To Do'
     });
@@ -90,11 +89,36 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
     setDeleteConfirmVisible(true);
   };
   
-  const handleEditFormFinish = (values: any) => {
-    // TODO: 实现编辑任务的API调用
-    console.log('编辑任务:', values);
-    message.info('任务编辑功能尚未实现');
-    setEditModalVisible(false);
+  const handleEditFormFinish = async (values: any) => {
+    if (!currentTask) return;
+    
+    try {
+      const taskId = currentTask.id || currentTask._id || '';
+      
+      // 调用updateMemory API更新任务内容和状态
+      await updateMemory(taskId, {
+        content: values.content,
+        summary: values.status
+      });
+      
+      // 更新本地任务列表中的任务
+      setTasks(tasks.map(task => {
+        if ((task.id || task._id) === taskId) {
+          return {
+            ...task,
+            content: values.content,
+            summary: values.status
+          };
+        }
+        return task;
+      }));
+      
+      message.success('任务更新成功');
+      setEditModalVisible(false);
+    } catch (error) {
+      console.error('更新任务失败:', error);
+      message.error('更新任务失败');
+    }
   };
 
   if (loading) {
@@ -193,14 +217,6 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
           layout="vertical"
           onFinish={handleEditFormFinish}
         >
-          <Form.Item
-            name="title"
-            label="任务标题"
-            rules={[{ required: true, message: '请输入任务标题' }]}
-          >
-            <Input placeholder="请输入任务标题" />
-          </Form.Item>
-          
           <Form.Item
             name="content"
             label="任务内容"
