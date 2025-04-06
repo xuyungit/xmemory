@@ -136,35 +136,44 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
           renderItem={(task) => (
             <List.Item>
               <Card 
-                title={task.title || '无标题任务'}
-                extra={
-                  task.summary && (
-                    <Tag color={statusColors[task.summary] || 'default'}>
+                bordered={true}
+                style={{ width: '100%' }}
+                bodyStyle={{ padding: '16px' }}
+                actions={[]}
+              >
+                <div>
+                  {task.summary && (
+                    <Tag color={statusColors[task.summary] || 'default'} style={{ marginBottom: '8px' }}>
                       {task.summary}
                     </Tag>
-                  )
-                }
-                actions={[
-                  <Tooltip title="编辑任务">
+                  )}
+                  <div style={{ whiteSpace: 'pre-line' }}>{task.content}</div>
+                </div>
+                <div style={{ 
+                  marginTop: 16, 
+                  fontSize: '12px', 
+                  color: '#999', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center' 
+                }}>
+                  <span>创建于: {new Date(task.created_at).toLocaleDateString()}</span>
+                  <span>
                     <Button
                       type="text"
+                      size="small"
                       icon={<EditOutlined />}
                       onClick={() => handleEditTask(task)}
+                      style={{ marginRight: '4px' }}
                     />
-                  </Tooltip>,
-                  <Tooltip title="删除任务">
                     <Button
                       type="text"
+                      size="small"
                       danger
                       icon={<DeleteOutlined />}
                       onClick={() => confirmDeleteTask(task.id || task._id || '')}
                     />
-                  </Tooltip>
-                ]}
-              >
-                <div style={{ whiteSpace: 'pre-line' }}>{task.content}</div>
-                <div style={{ marginTop: 16, fontSize: '12px', color: '#999' }}>
-                  创建于: {new Date(task.created_at).toLocaleDateString()}
+                  </span>
                 </div>
               </Card>
             </List.Item>
