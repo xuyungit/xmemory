@@ -9,13 +9,25 @@ from app.db.elasticsearch.models import MemoryDocument, MemoryType
 from app.llm.project_memory_agent import get_project_memory_agent, clear_context as clear_project_context
 from app.llm.insight_memory_agent import get_insight_memory_agent, clear_context as clear_insight_context
 
+triage_agent_instructions = """
+You are a triage agent to handle a user input message, which is a raw memory from recorded by user, you will decide which agent to use to handle the memory.
+You should analyze the user input message and decide which agent(s) to use.
+
+Here are the agents you can choose from:
+- Insight Memory Agent
+- Project Memory Agent
+
+If the memory contains both project and insight information, you should use split the original memory into two parts and handle them with different agents.
+You should use only one agent to handle the memory one time and call another agent to handle the other part.
+"""
+
 async def process_raw_memory(raw_memory: MemoryDocument):
     print(f"Processing raw memory for user: {raw_memory.user_id}, content: {raw_memory.content}")
     insight_memory_agent = get_insight_memory_agent(raw_memory=raw_memory)
     project_memory_agent = get_project_memory_agent(raw_memory=raw_memory)
     triage_agent = Agent(
         name="Triage Agent",
-        instructions="You are a triage agent, you will decide which agent to use. Try to use the most appropriate agent to handle the memory. Choose just one agent to handle the memory.",
+        instructions=triage_agent_instructions,
         handoff_description="You are a triage agent, you will decide which agent to use. Try to use the most appropriate agent to handle the memory.",
         handoffs=[project_memory_agent, insight_memory_agent],
     )
