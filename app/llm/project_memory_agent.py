@@ -76,7 +76,7 @@ async def list_projects() -> list[Project]:
     repo = MemoryRepository()
     projects = await repo.get_projects(user_id)
     projects = [Project(project_id=project._id, project_name=project.title, project_description=project.content) for project in projects]
-    return projects if projects else "No Projecte Created"
+    return projects if projects else "No Projects Created"
 
 async def create_project(project_name: str, project_description: str) -> str:
     """

@@ -47,7 +47,7 @@ async def search_memory(query: str):
     raw_memory = raw_memory_context.get()
     print(f"search_memory is called with raw_memory: {raw_memory.user_id}, query: {query}")
     repo = MemoryRepository()
-    memory_docs = await repo.search_by_similarity(query, raw_memory.user_id, raw_memory.tags)
+    memory_docs = await repo.search_by_similarity(query, raw_memory.user_id, raw_memory.tags, size=10)
     memory_list = [f"@{memory.created_at}: {memory.content}" for memory in memory_docs if memory.memory_type == MemoryType.INSIGHT]
     # make list of <memory>
     memory_list = [f"<memory>\n{memory}\n</memory>" for memory in memory_list]

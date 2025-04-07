@@ -67,18 +67,20 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         query: str,
         user_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        memory_type: Optional[MemoryType] = None,
         size: int = 10
     ) -> List[MemoryDocument]:
         vector = embed_text(query)
         if not vector:
             raise ValueError("Failed to generate embedding for query")
-        return await self.search_by_vector(vector, user_id, tags, size)
+        return await self.search_by_vector(vector, user_id, tags, memory_type, size)
 
     async def search_by_vector(
         self,
         vector: List[float],
         user_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        memory_type: Optional[MemoryType] = None,
         size: int = 10,
         return_vector: bool = False
     ) -> List[MemoryDocument]:
@@ -92,7 +94,7 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
             }
         }
 
-        if user_id or tags:
+        if user_id or tags or memory_type:
             query["knn"]["filter"] = {
                 "bool": {
                     "must": []
@@ -105,6 +107,10 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
             if tags:
                 query["knn"]["filter"]["bool"]["must"].append(
                     {"terms": {"tags": tags}}
+                )
+            if memory_type:
+                query["knn"]["filter"]["bool"]["must"].append(
+                    {"term": {"memory_type": memory_type.value}}
                 )
 
         # Exclude embedding field if return_vector is False
@@ -303,4 +309,65 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         
         except Exception as e:
             logging.error(f"获取未处理记忆时出错: {str(e)}")
+            return []
+
+    async def get_raw_memory_of_the_day(
+        self,
+        date_str: str,
+        user_id: Optional[str] = None,
+        size: int = 100
+    ) -> List[MemoryDocument]:
+        """
+        获取指定日期的原始记忆
+        
+        Args:
+            date_str: 日期字符串，支持多种格式，如YYYY-MM-DD, YYYY/MM/DD等
+            user_id: 可选的用户ID过滤
+            size: 返回的最大记录数
+            
+        Returns:
+            List[MemoryDocument]: 指定日期的RAW类型记忆列表，按创建时间升序排序
+        """
+        try:
+            # 使用dateutil.parser解析各种格式的日期
+            from dateutil import parser
+            date_obj = parser.parse(date_str)
+            
+            # 创建当天开始和结束的时间戳
+            from datetime import datetime
+            start_of_day = datetime.combine(date_obj.date(), datetime.min.time())
+            end_of_day = datetime.combine(date_obj.date(), datetime.max.time())
+            
+            # 构建日期范围查询
+            query = {
+                "bool": {
+                    "must": [
+                        {"term": {"memory_type": MemoryType.RAW.value}},
+                        {"range": {
+                            "created_at": {
+                                "gte": start_of_day.isoformat(),
+                                "lte": end_of_day.isoformat()
+                            }
+                        }}
+                    ]
+                }
+            }
+            
+            # 如果指定了用户ID，添加过滤条件
+            if user_id:
+                query["bool"]["must"].append({"term": {"user_id": user_id}})
+            
+            # 添加按创建时间升序排序
+            sort_clause = [{"created_at": {"order": "asc"}}]
+            
+            # 执行查询
+            results = await self.search(query, size=size, sort=sort_clause)
+            
+            # 转换为MemoryDocument对象
+            memory_docs = [MemoryDocument.from_dict(doc) for doc in results]
+            
+            return memory_docs
+            
+        except Exception as e:
+            logging.error(f"获取指定日期记忆时出错: {str(e)}")
             return []
