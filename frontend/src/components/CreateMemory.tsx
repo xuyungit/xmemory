@@ -43,7 +43,7 @@ const CreateMemory: React.FC = () => {
       
       await createMemory(values);
       message.success('记忆创建成功！');
-      form.resetFields(['title', 'content', 'created_at']);
+      form.resetFields(['content', 'created_at']);
     } catch (error) {
       message.error('创建记忆失败，请重试');
     } finally {
@@ -85,13 +85,6 @@ const CreateMemory: React.FC = () => {
             style={{ resize: 'vertical' }}
             ref={contentInputRef}
           />
-        </Form.Item>
-
-        <Form.Item
-          name="title"
-          label="记忆标题"
-        >
-          <Input placeholder="请输入记忆标题（可选）" />
         </Form.Item>
 
         <Form.Item
