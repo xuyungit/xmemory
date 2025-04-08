@@ -215,6 +215,7 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         self,
         memory_type: Optional[MemoryType] = None,
         user_id: Optional[str] = None,
+        parent_id: Optional[str] = None,
         page: int = 1,
         page_size: int = 10,
         sort_by: str = "created_at",
@@ -226,6 +227,7 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
         Args:
             memory_type: Filter by memory type
             user_id: Filter by user ID
+            parent_id: Filter by parent memory ID
             page: Page number (1-based)
             page_size: Number of items per page
             sort_by: Field to sort by (default: created_at)
@@ -241,6 +243,9 @@ class MemoryRepository(ElasticsearchRepository[MemoryDocument]):
             
         if user_id:
             query["bool"]["must"].append({"term": {"user_id": user_id}})
+            
+        if parent_id:
+            query["bool"]["must"].append({"term": {"parent_id": parent_id}})
             
         # If no filters, match all documents
         if not query["bool"]["must"]:

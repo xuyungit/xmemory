@@ -165,8 +165,9 @@ async def delete_memory(memory_id: str, user_id: Optional[str] = None):
 async def list_memories(
     memory_type: Optional[MemoryType] = None,
     user_id: Optional[str] = None,
+    parent_id: Optional[str] = None,
     page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=100),
+    page_size: int = Query(10, ge=1, le=200),
     sort_by: str = Query("created_at", regex="^(created_at|updated_at)$"),
     sort_order: str = Query("desc", regex="^(asc|desc)$")
 ):
@@ -186,6 +187,7 @@ async def list_memories(
         memory_docs, total = await repo.list_memories(
             memory_type=memory_type,
             user_id=user_id,
+            parent_id=parent_id,
             page=page,
             page_size=page_size,
             sort_by=sort_by,

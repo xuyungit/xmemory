@@ -159,7 +159,7 @@ export const getProjects = async (
     pageSize,
     sortBy,
     sortOrder,
-    'project' // 指定memory_type为project
+    'project'
   );
 };
 
@@ -200,7 +200,7 @@ export const getProjectTasks = async (
         user_id: currentUserId,
         memory_type: 'task',
         parent_id: projectId,
-        page_size: 100, // 获取足够多的结果
+        page_size: 100,
       },
     });
     
