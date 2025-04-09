@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Card, List, Typography, Spin, Empty, Button, Layout } from 'antd';
+import { Card, List, Typography, Spin, Empty, Button, Layout, Modal, Form, Input, message } from 'antd';
 import { FolderOutlined, PlusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import { getProjects, Project } from '../../services/memoryService';
+import { getProjects, Project, createProject } from '../../services/memoryService';
 import { getUserID } from '../../utils/userStorage';
 
 const { Content } = Layout;
 const { Paragraph } = Typography;
+const { TextArea } = Input;
 
 const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [form] = Form.useForm();
   
   useEffect(() => {
     fetchProjects();
@@ -51,13 +55,51 @@ const ProjectList: React.FC = () => {
     }
   };
 
+  const showCreateModal = () => {
+    form.resetFields();
+    setCreateModalVisible(true);
+  };
+
+  const handleCreateProject = async (values: { title: string; content: string }) => {
+    try {
+      setCreateLoading(true);
+      
+      // 调用创建项目API
+      const newProject = await createProject(
+        values.title,
+        values.content,
+        [] // 暂时不支持标签
+      );
+      
+      // 确保新项目对象具有正确的结构和ID字段，以便在列表中正确显示
+      const normalizedProject: Project = {
+        ...newProject,
+        id: newProject.id || newProject._id || '',  // 确保id字段存在
+        _id: newProject._id || newProject.id || '',  // 确保_id字段存在
+        title: values.title,  // 使用表单中的标题
+        content: values.content,  // 使用表单中的内容
+        created_at: newProject.created_at || new Date().toISOString()  // 确保created_at字段有效
+      };
+      
+      // 更新项目列表
+      setProjects(prev => [normalizedProject, ...prev]);
+      setCreateModalVisible(false);
+      message.success('项目创建成功');
+    } catch (error) {
+      console.error('创建项目失败:', error);
+      message.error('创建项目失败');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         <Button 
           type="primary" 
           icon={<PlusOutlined />} 
-          onClick={() => console.log('创建新项目')} // TODO: 创建新项目功能
+          onClick={showCreateModal}
         >
           新建项目
         </Button>
@@ -117,6 +159,58 @@ const ProjectList: React.FC = () => {
           }
         />
       )}
+
+      {/* 创建项目模态框 */}
+      <Modal
+        title="创建新项目"
+        open={createModalVisible}
+        onCancel={() => setCreateModalVisible(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleCreateProject}
+        >
+          <Form.Item
+            name="title"
+            label="项目名称"
+            rules={[{ required: true, message: '请输入项目名称' }]}
+          >
+            <Input placeholder="请输入项目名称" />
+          </Form.Item>
+          
+          <Form.Item
+            name="content"
+            label="项目描述"
+            rules={[{ required: true, message: '请输入项目描述' }]}
+          >
+            <TextArea 
+              placeholder="请输入项目描述" 
+              autoSize={{ minRows: 4, maxRows: 8 }}
+            />
+          </Form.Item>
+          
+          <Form.Item>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button 
+                style={{ marginRight: 8 }} 
+                onClick={() => setCreateModalVisible(false)}
+              >
+                取消
+              </Button>
+              <Button 
+                type="primary" 
+                htmlType="submit"
+                loading={createLoading}
+              >
+                创建
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

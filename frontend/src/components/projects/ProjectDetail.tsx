@@ -17,6 +17,7 @@ const ProjectDetail: React.FC = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false); // 新增删除确认对话框状态
   const [form] = Form.useForm();
 
   const fetchProjectDetail = useCallback(async () => {
@@ -45,6 +46,10 @@ const ProjectDetail: React.FC = () => {
     }
   }, [projectId, fetchProjectDetail]);
 
+  const showDeleteConfirm = () => {
+    setDeleteModalVisible(true);
+  };
+
   const handleDeleteProject = async () => {
     if (!projectId || !project) return;
     
@@ -58,6 +63,7 @@ const ProjectDetail: React.FC = () => {
       message.error('删除项目失败');
     } finally {
       setDeleteLoading(false);
+      setDeleteModalVisible(false);
     }
   };
 
@@ -129,7 +135,7 @@ const ProjectDetail: React.FC = () => {
             <Button 
               danger 
               icon={<DeleteOutlined />} 
-              onClick={handleDeleteProject}
+              onClick={showDeleteConfirm} // 修改为显示确认对话框
               loading={deleteLoading}
             >
               删除
@@ -206,6 +212,29 @@ const ProjectDetail: React.FC = () => {
             </div>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 删除确认对话框 */}
+      <Modal
+        title="删除确认"
+        open={deleteModalVisible}
+        onCancel={() => setDeleteModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setDeleteModalVisible(false)}>
+            取消
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary" 
+            danger 
+            loading={deleteLoading} 
+            onClick={handleDeleteProject}
+          >
+            确认删除
+          </Button>,
+        ]}
+      >
+        <p>确定要删除项目"{project?.title || '未命名项目'}"吗？此操作不可恢复！</p>
       </Modal>
     </div>
   );

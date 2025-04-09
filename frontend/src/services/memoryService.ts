@@ -215,3 +215,32 @@ export const getProjectTasks = async (
     return [];
   }
 };
+
+/**
+ * 创建新项目
+ * @param title 项目名称
+ * @param content 项目描述
+ * @param tags 项目标签
+ * @returns 创建的项目对象
+ */
+export const createProject = async (
+  title: string,
+  content: string,
+  tags: string[] = []
+): Promise<Project> => {
+  const userId = getUserID();
+  if (!userId) {
+    throw new Error('用户未登录');
+  }
+  
+  const projectData = {
+    user_id: userId,
+    title,
+    content,
+    tags,
+    memory_type: 'project',
+  };
+  
+  const response = await createMemory(projectData);
+  return response as Project;
+};

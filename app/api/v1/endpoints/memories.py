@@ -20,6 +20,7 @@ class MemoryCreate(BaseModel):
     content: str
     user_id: str
     tags: List[str] = []
+    memory_type: MemoryType = MemoryType.RAW
     title: Optional[str] = None
     summary: Optional[str] = None
     parent_id: Optional[str] = None
@@ -88,7 +89,7 @@ async def create_memory(memory: MemoryCreate):
             
         memory_doc = MemoryDocument(
             content=memory.content,
-            memory_type=MemoryType.RAW,
+            memory_type=memory.memory_type,
             tags=memory.tags,
             user_id=memory.user_id,
             title=memory.title,
