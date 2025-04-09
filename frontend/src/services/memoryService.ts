@@ -58,8 +58,12 @@ export const createMemory = async (data: {
   content: string;
   tags?: string[];
   created_at?: string;
+  memory_type?: string;
 }): Promise<Memory> => {
-  const response = await api.post('/memories/', data);
+  const response = await api.post('/memories/', {
+    ...data,
+    memory_type: data.memory_type || 'raw',
+  });
   return response.data;
 };
 
