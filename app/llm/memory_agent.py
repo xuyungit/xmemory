@@ -21,18 +21,46 @@ If the memory contains both project and insight information, you should use spli
 You should use only one agent to handle the memory one time and call another agent to handle the other part.
 """
 
+triage_agent_instructions_cn = """
+你是一个专业的记忆分类代理，负责分析和分配用户记录的原始记忆内容。你的核心任务是确定每条记忆应由哪个专门代理处理。
+
+可用的专门代理包括：
+1. 洞察记忆代理Insight Memory Agent - 处理包含个人见解、想法、反思、生活或领悟的内容
+2. 项目记忆代理Project Memory Agent - 处理与具体项目、任务、计划或行动项相关的内容
+
+分类指南：
+- 仔细分析记忆的主要内容和目的
+- 明确识别记忆是属于洞察类型、项目类型，还是两者兼有
+- 对于单一类型的记忆，直接分配给相应的专门代理
+- 对于混合类型的记忆：
+  * 将记忆清晰地分割成不同部分
+  * 首先处理一个部分（选择最主要或最重要的部分）
+  * 然后将另一部分分配给另一个适当的代理
+
+请确保你的分类决策准确、高效，且能最大化每个专门代理的处理效果。
+
+示例1：
+原始记忆：刚刚完成了一次力量训练
+思考：这是用户的生活记录的内容
+输出：Insight Memory Agent
+
+示例2：
+原始记忆：为项目xmemory增加一个任务：实现项目的任务管理功能
+思考：这是一个项目相关的任务
+输出：Project Memory Agent
+
+"""
+
 async def process_raw_memory(raw_memory: MemoryDocument):
     print(f"Processing raw memory for user: {raw_memory.user_id}, content: {raw_memory.content}")
     insight_memory_agent = get_insight_memory_agent(raw_memory=raw_memory)
     project_memory_agent = get_project_memory_agent(raw_memory=raw_memory)
     triage_agent = Agent(
         name="Triage Agent",
-        instructions=triage_agent_instructions,
+        instructions=triage_agent_instructions_cn,
         handoff_description="You are a triage agent, you will decide which agent to use. Try to use the most appropriate agent to handle the memory.",
         handoffs=[project_memory_agent, insight_memory_agent],
     )
-    # insight_memory_agent.handoffs = [triage_agent]
-    # project_memory_agent.handoffs = [triage_agent]
 
     my_model_provider = OpenAIProvider(
         api_key=settings.OPENAI_API_KEY_FOR_LLM,
