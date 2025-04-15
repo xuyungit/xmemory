@@ -222,7 +222,13 @@ def get_project_memory_agent(raw_memory: MemoryDocument) -> Agent:
     return Agent(
         name="Project Memory Agent",
         instructions=instructions,
-        handoff_description="Special Agent for project memory management, such as creating, updating, and listing projects and tasks.",
+        # handoff_description="Special Agent for project memory management, such as creating, updating, and listing projects and tasks.",
+        handoff_description="处理与具体项目、任务、计划或行动项相关的内容"
+        "例子：为项目xmemory增加一个任务：实现项目的任务管理功能（）"
+        "下面的例子应该使用project_memory_agent来处理："
+        "为项目xmemory增加一个任务：实现项目的任务管理功能；"
+        "我今天完成了一体机项目的需求分析文档编写"
+        "完成了周报的编写",
         tools=[
             function_tool(list_projects),
             function_tool(create_project),

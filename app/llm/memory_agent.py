@@ -22,10 +22,10 @@ You should use only one agent to handle the memory one time and call another age
 """
 
 triage_agent_instructions_cn = """
-你是一个专业的记忆分类代理，负责分析和分配用户记录的原始记忆内容。你的核心任务是确定每条记忆应由哪个专门代理处理。
+你是一个专业的记忆分类代理，负责分析和分配用户记录的原始记忆内容。你的核心任务是确定每条记忆应由哪个专门代理处理，并且调用function call切换到相应的代理。
 
 可用的专门代理包括：
-1. 洞察记忆代理Insight Memory Agent - 处理包含个人见解、想法、反思、生活或领悟的内容
+1. 洞察记忆代理Insight Memory Agent - 处理包含个人的喜好、见解、想法、反思、生活或领悟的内容
 2. 项目记忆代理Project Memory Agent - 处理与具体项目、任务、计划或行动项相关的内容
 
 分类指南：
@@ -38,17 +38,6 @@ triage_agent_instructions_cn = """
   * 然后将另一部分分配给另一个适当的代理
 
 请确保你的分类决策准确、高效，且能最大化每个专门代理的处理效果。
-
-示例1：
-原始记忆：刚刚完成了一次力量训练
-思考：这是用户的生活记录的内容
-输出：Insight Memory Agent
-
-示例2：
-原始记忆：为项目xmemory增加一个任务：实现项目的任务管理功能
-思考：这是一个项目相关的任务
-输出：Project Memory Agent
-
 """
 
 async def process_raw_memory(raw_memory: MemoryDocument):
@@ -66,7 +55,7 @@ async def process_raw_memory(raw_memory: MemoryDocument):
         api_key=settings.OPENAI_API_KEY_FOR_LLM,
         base_url=settings.OPENAI_API_BASE_FOR_LLM,
     )
-    my_run_config = RunConfig(model_provider=my_model_provider)
+    my_run_config = RunConfig(model=settings.LLM_MODEL, model_provider=my_model_provider)
 
     try:
         result = await Runner.run(triage_agent, raw_memory.content, run_config=my_run_config)

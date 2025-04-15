@@ -139,7 +139,15 @@ def get_insight_memory_agent(raw_memory: MemoryDocument) -> Agent:
     return Agent(
         name="Insight Memory Agent",
         instructions=insight_agent_instructions,
-        handoff_description="Special Agent for process general purpose memory, such as insights, preference, profiles and facts.",
+        # handoff_description="Special Agent for process general purpose memory, such as insights, preference, profiles and facts.",
+        handoff_description="洞察个人记忆的Agent，处理包含个人的喜好、见解、想法、反思、生活或领悟的内容，把原始的记忆处理成更有价值的洞察。"
+        "下面的例子应该使用insight_memory_agent来处理："
+        "- 刚刚完成了一次力量训练（个人生活记录）；"
+        "- 我不喜欢吃海鲜（个人喜好）；"
+        "- 我今天学习了python（个人学习记录）；"
+        "- 我今天吃了两个苹果（个人饮食记录）；"
+        "- 我发现关税政策对经济的影响很大（个人见解）；"
+        "注意重要：本代理不处理关于计划、任务、行动项的记忆，应该使用项目记忆代理来处理。",
         tools=[
             function_tool(search_memory),
             function_tool(create_memory)
