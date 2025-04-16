@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, Card, Tag, Button, Tooltip, Modal, Form, Input, Select, message, Empty, Spin } from 'antd';
+import { List, Card, Tag, Button, Tooltip, Modal, Form, Input, Select, message, Empty, Spin, Tabs } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { getProjectTasks, Task, deleteMemory, updateMemory, createTask } from '../../services/memoryService';
 import { getUserID } from '../../utils/userStorage';
@@ -39,22 +39,17 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
       setLoading(true);
       const tasks = await getProjectTasks(projectId);
       
-      // 按状态排序：To Do -> In Progress -> Done -> Deleted
-      const sortOrder: Record<string, number> = {
-        'To Do': 0,
-        'In Progress': 1,
-        'Done': 2,
-        'Deleted': 3,
-        '': 4 // 未设置状态的排最后
-      };
-      
-      const sortedTasks = [...tasks].sort((a, b) => {
-        const statusA = a.summary || '';
-        const statusB = b.summary || '';
-        return (sortOrder[statusA] || 999) - (sortOrder[statusB] || 999);
+      // 先按照更新时间从新到旧排序
+      const sortedByTime = [...tasks].sort((a, b) => {
+        // 优先使用updated_at，如果没有则使用created_at
+        const timeA = a.updated_at ? new Date(a.updated_at).getTime() : 
+                     (a.created_at ? new Date(a.created_at).getTime() : 0);
+        const timeB = b.updated_at ? new Date(b.updated_at).getTime() : 
+                     (b.created_at ? new Date(b.created_at).getTime() : 0);
+        return timeB - timeA; // 从新到旧排序
       });
       
-      setTasks(sortedTasks);
+      setTasks(sortedByTime);
     } catch (error) {
       console.error('获取任务列表失败:', error);
     } finally {
@@ -98,24 +93,33 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
     try {
       const taskId = currentTask.id || currentTask._id || '';
       
-      // 调用updateMemory API更新任务内容和状态
+      // 调用updateMemory API更新任务内容和状态（移除不在接口中的updated_at字段）
       await updateMemory(taskId, {
         content: values.content,
         summary: values.status
       });
       
       // 更新本地任务列表中的任务
-      setTasks(tasks.map(task => {
-        if ((task.id || task._id) === taskId) {
-          return {
-            ...task,
-            content: values.content,
-            summary: values.status
-          };
-        }
-        return task;
-      }));
+      const updatedTask = {
+        ...currentTask,
+        content: values.content,
+        summary: values.status,
+        updated_at: new Date().toISOString() // 仅在前端状态中添加更新时间
+      };
       
+      // 使用map更新任务，然后按照更新时间重新排序
+      const updatedTasks = tasks
+        .map(task => ((task.id || task._id) === taskId ? updatedTask : task))
+        .sort((a, b) => {
+          // 优先使用updated_at，如果没有则使用created_at
+          const timeA = a.updated_at ? new Date(a.updated_at).getTime() : 
+                      (a.created_at ? new Date(a.created_at).getTime() : 0);
+          const timeB = b.updated_at ? new Date(b.updated_at).getTime() : 
+                      (b.created_at ? new Date(b.created_at).getTime() : 0);
+          return timeB - timeA; // 从新到旧排序
+        });
+      
+      setTasks(updatedTasks);
       message.success('任务更新成功');
       setEditModalVisible(false);
     } catch (error) {
@@ -136,22 +140,21 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
         []  // 暂时不支持添加标签
       );
       
-      // 输出日志，便于调试
-      console.log('创建的新任务:', newTask);
-      
-      // 将新任务添加到列表中，保持排序
-      const sortOrder: Record<string, number> = {
-        'To Do': 0,
-        'In Progress': 1,
-        'Done': 2,
-        'Deleted': 3,
-        '': 4 // 未设置状态的排最后
+      // 为新任务添加当前时间作为创建和更新时间
+      const taskWithTimes = {
+        ...newTask,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
-      const updatedTasks = [...tasks, newTask].sort((a, b) => {
-        const statusA = a.summary || '';
-        const statusB = b.summary || '';
-        return (sortOrder[statusA] || 999) - (sortOrder[statusB] || 999);
+      // 将新任务添加到列表中，然后按照更新时间重新排序
+      const updatedTasks = [...tasks, taskWithTimes].sort((a, b) => {
+        // 优先使用updated_at，如果没有则使用created_at
+        const timeA = a.updated_at ? new Date(a.updated_at).getTime() : 
+                     (a.created_at ? new Date(a.created_at).getTime() : 0);
+        const timeB = b.updated_at ? new Date(b.updated_at).getTime() : 
+                     (b.created_at ? new Date(b.created_at).getTime() : 0);
+        return timeB - timeA; // 从新到旧排序
       });
       
       setTasks(updatedTasks);
@@ -196,63 +199,276 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
       {tasks.length === 0 ? (
         <Empty description="暂无任务" />
       ) : (
-        <List
-          grid={{
-            gutter: 16,
-            xs: 1,
-            sm: 1,
-            md: 1,
-            lg: 2,
-            xl: 2,
-            xxl: 3,
-          }}
-          dataSource={tasks}
-          renderItem={(task) => (
-            <List.Item>
-              <Card 
-                bordered={true}
-                style={{ width: '100%' }}
-                bodyStyle={{ padding: '16px' }}
-                actions={[]}
-              >
-                <div>
-                  {task.summary && (
-                    <Tag color={statusColors[task.summary] || 'default'} style={{ marginBottom: '8px' }}>
-                      {task.summary}
-                    </Tag>
-                  )}
-                  <div style={{ whiteSpace: 'pre-line' }}>{task.content}</div>
-                </div>
-                <div style={{ 
-                  marginTop: 16, 
-                  fontSize: '12px', 
-                  color: '#999', 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center' 
-                }}>
-                  <span>创建于: {task.created_at ? new Date(task.created_at).toLocaleDateString() || '未知日期' : '未知日期'}</span>
-                  <span>
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<EditOutlined />}
-                      onClick={() => handleEditTask(task)}
-                      style={{ marginRight: '4px' }}
-                    />
-                    <Button
-                      type="text"
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => confirmDeleteTask(task.id || task._id || '')}
-                    />
-                  </span>
-                </div>
-              </Card>
-            </List.Item>
-          )}
-        />
+        <Tabs defaultActiveKey="1">
+          <Tabs.TabPane tab="待办" key="1">
+            <List
+              grid={{
+                gutter: 16,
+                xs: 1,
+                sm: 1,
+                md: 1,
+                lg: 2,
+                xl: 2,
+                xxl: 3,
+              }}
+              dataSource={tasks.filter(task => task.summary === 'To Do')}
+              renderItem={(task) => (
+                <List.Item>
+                  <Card 
+                    bordered={true}
+                    style={{ width: '100%' }}
+                    bodyStyle={{ padding: '16px' }}
+                    actions={[]}
+                  >
+                    <div>
+                      {task.summary && (
+                        <Tag color={statusColors[task.summary] || 'default'} style={{ marginBottom: '8px' }}>
+                          {task.summary}
+                        </Tag>
+                      )}
+                      <div style={{ whiteSpace: 'pre-line' }}>{task.content}</div>
+                    </div>
+                    <div style={{ 
+                      marginTop: 16, 
+                      fontSize: '12px', 
+                      color: '#999', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      flexDirection: 'column',
+                      alignItems: 'flex-start'
+                    }}>
+                      <div style={{ marginBottom: '4px' }}>
+                        <span>创建于: {task.created_at ? new Date(task.created_at).toLocaleDateString() : '未知日期'}</span>
+                      </div>
+                      {task.updated_at && task.updated_at !== task.created_at && (
+                        <div style={{ marginBottom: '4px' }}>
+                          <span>更新于: {new Date(task.updated_at).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      <div style={{ alignSelf: 'flex-end' }}>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={() => handleEditTask(task)}
+                          style={{ marginRight: '4px' }}
+                        />
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => confirmDeleteTask(task.id || task._id || '')}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </List.Item>
+              )}
+            />
+          </Tabs.TabPane>
+          <Tabs.TabPane tab="进行中" key="2">
+            <List
+              grid={{
+                gutter: 16,
+                xs: 1,
+                sm: 1,
+                md: 1,
+                lg: 2,
+                xl: 2,
+                xxl: 3,
+              }}
+              dataSource={tasks.filter(task => task.summary === 'In Progress')}
+              renderItem={(task) => (
+                <List.Item>
+                  <Card 
+                    bordered={true}
+                    style={{ width: '100%' }}
+                    bodyStyle={{ padding: '16px' }}
+                    actions={[]}
+                  >
+                    <div>
+                      {task.summary && (
+                        <Tag color={statusColors[task.summary] || 'default'} style={{ marginBottom: '8px' }}>
+                          {task.summary}
+                        </Tag>
+                      )}
+                      <div style={{ whiteSpace: 'pre-line' }}>{task.content}</div>
+                    </div>
+                    <div style={{ 
+                      marginTop: 16, 
+                      fontSize: '12px', 
+                      color: '#999', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      flexDirection: 'column',
+                      alignItems: 'flex-start'
+                    }}>
+                      <div style={{ marginBottom: '4px' }}>
+                        <span>创建于: {task.created_at ? new Date(task.created_at).toLocaleDateString() : '未知日期'}</span>
+                      </div>
+                      {task.updated_at && task.updated_at !== task.created_at && (
+                        <div style={{ marginBottom: '4px' }}>
+                          <span>更新于: {new Date(task.updated_at).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      <div style={{ alignSelf: 'flex-end' }}>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={() => handleEditTask(task)}
+                          style={{ marginRight: '4px' }}
+                        />
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => confirmDeleteTask(task.id || task._id || '')}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </List.Item>
+              )}
+            />
+          </Tabs.TabPane>
+          <Tabs.TabPane tab="已完成" key="3">
+            <List
+              grid={{
+                gutter: 16,
+                xs: 1,
+                sm: 1,
+                md: 1,
+                lg: 2,
+                xl: 2,
+                xxl: 3,
+              }}
+              dataSource={tasks.filter(task => task.summary === 'Done')}
+              renderItem={(task) => (
+                <List.Item>
+                  <Card 
+                    bordered={true}
+                    style={{ width: '100%' }}
+                    bodyStyle={{ padding: '16px' }}
+                    actions={[]}
+                  >
+                    <div>
+                      {task.summary && (
+                        <Tag color={statusColors[task.summary] || 'default'} style={{ marginBottom: '8px' }}>
+                          {task.summary}
+                        </Tag>
+                      )}
+                      <div style={{ whiteSpace: 'pre-line' }}>{task.content}</div>
+                    </div>
+                    <div style={{ 
+                      marginTop: 16, 
+                      fontSize: '12px', 
+                      color: '#999', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      flexDirection: 'column',
+                      alignItems: 'flex-start'
+                    }}>
+                      <div style={{ marginBottom: '4px' }}>
+                        <span>创建于: {task.created_at ? new Date(task.created_at).toLocaleDateString() : '未知日期'}</span>
+                      </div>
+                      {task.updated_at && task.updated_at !== task.created_at && (
+                        <div style={{ marginBottom: '4px' }}>
+                          <span>更新于: {new Date(task.updated_at).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      <div style={{ alignSelf: 'flex-end' }}>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={() => handleEditTask(task)}
+                          style={{ marginRight: '4px' }}
+                        />
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => confirmDeleteTask(task.id || task._id || '')}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </List.Item>
+              )}
+            />
+          </Tabs.TabPane>
+          <Tabs.TabPane tab="已删除" key="4">
+            <List
+              grid={{
+                gutter: 16,
+                xs: 1,
+                sm: 1,
+                md: 1,
+                lg: 2,
+                xl: 2,
+                xxl: 3,
+              }}
+              dataSource={tasks.filter(task => task.summary === 'Deleted')}
+              renderItem={(task) => (
+                <List.Item>
+                  <Card 
+                    bordered={true}
+                    style={{ width: '100%' }}
+                    bodyStyle={{ padding: '16px' }}
+                    actions={[]}
+                  >
+                    <div>
+                      {task.summary && (
+                        <Tag color={statusColors[task.summary] || 'default'} style={{ marginBottom: '8px' }}>
+                          {task.summary}
+                        </Tag>
+                      )}
+                      <div style={{ whiteSpace: 'pre-line' }}>{task.content}</div>
+                    </div>
+                    <div style={{ 
+                      marginTop: 16, 
+                      fontSize: '12px', 
+                      color: '#999', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      flexDirection: 'column',
+                      alignItems: 'flex-start'
+                    }}>
+                      <div style={{ marginBottom: '4px' }}>
+                        <span>创建于: {task.created_at ? new Date(task.created_at).toLocaleDateString() : '未知日期'}</span>
+                      </div>
+                      {task.updated_at && task.updated_at !== task.created_at && (
+                        <div style={{ marginBottom: '4px' }}>
+                          <span>更新于: {new Date(task.updated_at).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      <div style={{ alignSelf: 'flex-end' }}>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={() => handleEditTask(task)}
+                          style={{ marginRight: '4px' }}
+                        />
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => confirmDeleteTask(task.id || task._id || '')}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </List.Item>
+              )}
+            />
+          </Tabs.TabPane>
+        </Tabs>
       )}
       
       {/* 编辑任务对话框 */}
