@@ -86,7 +86,8 @@ class ElasticsearchRepository(Generic[T]):
             if "knn" in query:
                 result = await es.search(
                     index=self.index_name,
-                    body=query
+                    body=query,
+                    _source_excludes=["embedding"]  # 排除 embedding 字段
                 )
             else:
                 search_body = {
@@ -99,7 +100,8 @@ class ElasticsearchRepository(Generic[T]):
                     
                 result = await es.search(
                     index=self.index_name,
-                    body=search_body
+                    body=search_body,
+                    _source_excludes=["embedding"]  # 排除 embedding 字段
                 )
             return [{
                 **hit['_source'],
@@ -154,4 +156,4 @@ class ElasticsearchRepository(Generic[T]):
             return True
         except Exception as e:
             print(f"Error deleting document {id}: {str(e)}")
-            return False 
+            return False
