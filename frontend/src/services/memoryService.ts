@@ -244,3 +244,48 @@ export const createProject = async (
   const response = await createMemory(projectData);
   return response as Project;
 };
+
+/**
+ * 创建新任务
+ * @param projectId 项目ID
+ * @param taskDescription 任务描述
+ * @param status 任务状态（可选，默认为"To Do"）
+ * @param tags 任务标签（可选）
+ * @returns 创建的任务对象
+ */
+export const createTask = async (
+  projectId: string,
+  taskDescription: string,
+  status: string = 'To Do',
+  tags: string[] = []
+): Promise<Task> => {
+  const userId = getUserID();
+  if (!userId) {
+    throw new Error('用户未登录');
+  }
+  
+  const taskData = {
+    user_id: userId,
+    title: taskDescription,
+    content: taskDescription,
+    tags,
+    memory_type: 'task',
+    parent_id: projectId,
+    summary: status,
+  };
+  
+  const response = await createMemory(taskData);
+
+  // 确保返回完整的任务对象
+  const createdTask: Task = {
+    ...response,
+    parent_id: projectId,
+    content: taskDescription, // 确保内容字段正确
+    summary: status,          // 确保状态字段正确
+    // 如果日期格式有问题，可以尝试标准化日期格式
+    created_at: response.created_at || new Date().toISOString()
+  };
+  
+  console.log('创建的任务对象：', createdTask);
+  return createdTask;
+};

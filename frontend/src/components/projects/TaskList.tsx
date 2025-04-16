@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { List, Card, Tag, Button, Tooltip, Modal, Form, Input, Select, message, Empty, Spin } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getProjectTasks, Task, deleteMemory, updateMemory } from '../../services/memoryService';
+import { getProjectTasks, Task, deleteMemory, updateMemory, createTask } from '../../services/memoryService';
 import { getUserID } from '../../utils/userStorage';
 
 interface TaskListProps {
@@ -20,10 +20,13 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [form] = Form.useForm();
+  const [createForm] = Form.useForm();
+  const [createLoading, setCreateLoading] = useState(false);
   
   useEffect(() => {
     if (projectId) {
@@ -121,6 +124,53 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
     }
   };
 
+  const handleCreateTask = async (values: any) => {
+    try {
+      setCreateLoading(true);
+      
+      // 调用创建任务API
+      const newTask = await createTask(
+        projectId,
+        values.content,
+        values.status || 'To Do',
+        []  // 暂时不支持添加标签
+      );
+      
+      // 输出日志，便于调试
+      console.log('创建的新任务:', newTask);
+      
+      // 将新任务添加到列表中，保持排序
+      const sortOrder: Record<string, number> = {
+        'To Do': 0,
+        'In Progress': 1,
+        'Done': 2,
+        'Deleted': 3,
+        '': 4 // 未设置状态的排最后
+      };
+      
+      const updatedTasks = [...tasks, newTask].sort((a, b) => {
+        const statusA = a.summary || '';
+        const statusB = b.summary || '';
+        return (sortOrder[statusA] || 999) - (sortOrder[statusB] || 999);
+      });
+      
+      setTasks(updatedTasks);
+      message.success('任务创建成功');
+      setCreateModalVisible(false);
+      createForm.resetFields();
+    } catch (error) {
+      console.error('创建任务失败:', error);
+      message.error('创建任务失败');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+  
+  const showCreateTaskModal = () => {
+    createForm.resetFields(); // 重置表单字段
+    setCreateModalVisible(true);
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '20px' }}>
@@ -137,7 +187,7 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
         <Button 
           type="primary" 
           icon={<PlusOutlined />}
-          onClick={() => message.info('新建任务功能尚未实现')} // TODO: 实现新建任务功能
+          onClick={showCreateTaskModal}
         >
           新建任务
         </Button>
@@ -181,7 +231,7 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
                   justifyContent: 'space-between', 
                   alignItems: 'center' 
                 }}>
-                  <span>创建于: {new Date(task.created_at).toLocaleDateString()}</span>
+                  <span>创建于: {task.created_at ? new Date(task.created_at).toLocaleDateString() || '未知日期' : '未知日期'}</span>
                   <span>
                     <Button
                       type="text"
@@ -244,6 +294,52 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
               </Button>
               <Button type="primary" htmlType="submit">
                 保存
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
+      
+      {/* 新建任务对话框 */}
+      <Modal
+        title="新建任务"
+        open={createModalVisible}
+        onCancel={() => setCreateModalVisible(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={createForm}
+          layout="vertical"
+          onFinish={handleCreateTask}
+        >
+          <Form.Item
+            name="content"
+            label="任务内容"
+            rules={[{ required: true, message: '请输入任务内容' }]}
+          >
+            <Input.TextArea rows={4} placeholder="请输入任务内容" />
+          </Form.Item>
+          
+          <Form.Item
+            name="status"
+            label="任务状态"
+            initialValue="To Do"
+          >
+            <Select>
+              <Select.Option value="To Do">待办</Select.Option>
+              <Select.Option value="In Progress">进行中</Select.Option>
+              <Select.Option value="Done">已完成</Select.Option>
+            </Select>
+          </Form.Item>
+          
+          <Form.Item>
+            <div style={{ textAlign: 'right' }}>
+              <Button style={{ marginRight: 8 }} onClick={() => setCreateModalVisible(false)}>
+                取消
+              </Button>
+              <Button type="primary" htmlType="submit" loading={createLoading}>
+                创建
               </Button>
             </div>
           </Form.Item>
