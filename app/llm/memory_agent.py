@@ -1,13 +1,15 @@
 import asyncio
 from datetime import datetime
-# import contextvars
-
+import contextvars
+from pydantic import BaseModel
 from agents import Agent, Runner, RunConfig
 from agents.models.openai_provider import OpenAIProvider
 from app.core.config import settings
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
 from app.llm.project_memory_agent import get_project_memory_agent, clear_context as clear_project_context
 from app.llm.insight_memory_agent import get_insight_memory_agent, clear_context as clear_insight_context
+from app.db.elasticsearch.memory_repository import MemoryRepository
+from app.storage.file_storage import FileStorage
 
 triage_agent_instructions = """
 You are a triage agent to handle a user input message, which is a raw memory from recorded by user, you will decide which agent to use to handle the memory.
@@ -28,6 +30,8 @@ triage_agent_instructions_cn = """
 1. 洞察记忆代理Insight Memory Agent - 处理包含个人的喜好、见解、想法、反思、生活或领悟的内容
 2. 项目记忆代理Project Memory Agent - 处理与具体项目、任务、计划或行动项相关的内容
 
+你会获知用户当前的项目信息，你可以使用这些信息来帮助你判断信息是否属于某个项目。
+
 分类指南：
 - 仔细分析记忆的主要内容和目的
 - 明确识别记忆是属于洞察类型、项目类型，还是两者兼有
@@ -39,6 +43,18 @@ triage_agent_instructions_cn = """
 
 请确保你的分类决策准确、高效，且能最大化每个专门代理的处理效果。
 """
+class Project(BaseModel):
+    project_id: str
+    project_name: str
+    project_description: str
+
+async def get_project_information(user_id: str) -> str:
+    repo = MemoryRepository()
+    projects = await repo.get_projects(user_id)
+    projects = [Project(project_id=project._id, project_name=project.title, project_description=project.content) for project in projects]
+    
+    projects = [f"<project>\n<project_name>{project.project_name}</project_name>\n<project_description>{project.project_description}</project_description>\n</project>" for project in projects]
+    return "```<projects>\n" + "\n".join(projects) + "\n</projects>```" if projects else "No Projects Created"
 
 async def process_raw_memory(raw_memory: MemoryDocument):
     print(f"Processing raw memory for user: {raw_memory.user_id}, content: {raw_memory.content}")
@@ -46,7 +62,7 @@ async def process_raw_memory(raw_memory: MemoryDocument):
     project_memory_agent = get_project_memory_agent(raw_memory=raw_memory)
     triage_agent = Agent(
         name="Triage Agent",
-        instructions=triage_agent_instructions_cn,
+        instructions=triage_agent_instructions_cn + "\n" + await get_project_information(raw_memory.user_id),
         handoff_description="You are a triage agent, you will decide which agent to use. Try to use the most appropriate agent to handle the memory.",
         handoffs=[project_memory_agent, insight_memory_agent],
     )

@@ -16,7 +16,7 @@ from app.db.elasticsearch.models import MemoryDocument, MemoryType
 # 这意味着不同用户的请求不会相互干扰
 raw_memory_context = contextvars.ContextVar('raw_memory', default=None)
 
-instructions = """
+project_memory_agent_instructions_cn = """
 你是一个专业的项目信息管理的助手，你将收到一段用户的原始文本信息，你需要分析这段信息，并使用工具对这个信息进行进一步的处理。
 处理方法：
 1. 你需要判断这段原始的信息是否属于一个项目，为此，你可能需要使用list_projects工具来查找相关的项目。
@@ -219,6 +219,8 @@ def get_project_memory_agent(raw_memory: MemoryDocument) -> Agent:
     :return: Agent
     """
     raw_memory_context.set(raw_memory)
+    
+    instructions = f"当前时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}\n" + project_memory_agent_instructions_cn 
     return Agent(
         name="Project Memory Agent",
         instructions=instructions,

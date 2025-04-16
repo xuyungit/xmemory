@@ -22,6 +22,11 @@ insight_agent_instructions = """
  5. 根据旧记忆来决定如何处理新的记忆。
  6. 如果旧记忆中没有相关的记忆，请使用create_memory工具来创建新的记忆。
 
+注意：
+记忆是有时间属性的，比如我说今天心情不好，指的是记录的当天。如果再收到另外一条记忆：“今天心情很好”，但是发生的时间不同的时候，这时候就应该再创建一条新的记忆。
+如果再同一个时间段收到更新，那么就应该更新之前的记忆。
+你再决定更新或者新建整理后的记忆的时候，要考虑之前的记忆的时间。
+
  例子1：
  用户输入：我今天吃了两个苹果。我爱吃苹果。我今天学习了python
  你的输出：
@@ -135,10 +140,11 @@ def get_insight_memory_agent(raw_memory: MemoryDocument) -> Agent:
     :return: Agent
     """
     raw_memory_context.set(raw_memory)
+    instructions = f"当前时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}\n" + insight_agent_instructions 
 
     return Agent(
         name="Insight Memory Agent",
-        instructions=insight_agent_instructions,
+        instructions=instructions,
         # handoff_description="Special Agent for process general purpose memory, such as insights, preference, profiles and facts.",
         handoff_description="洞察个人记忆的Agent，处理包含个人的喜好、见解、想法、反思、生活或领悟的内容，把原始的记忆处理成更有价值的洞察。"
         "下面的例子应该使用insight_memory_agent来处理："
