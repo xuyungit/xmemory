@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
-import contextvars
 from pydantic import BaseModel
+from rich.pretty import pprint
 from agents import Agent, Runner, RunConfig
 from agents.models.openai_provider import OpenAIProvider
 from app.core.config import settings
@@ -10,6 +10,7 @@ from app.llm.project_memory_agent import get_project_memory_agent, clear_context
 from app.llm.insight_memory_agent import get_insight_memory_agent, clear_context as clear_insight_context
 from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.storage.file_storage import FileStorage
+from app.llm.agno_memory import AgnoMemory
 
 triage_agent_instructions = """
 You are a triage agent to handle a user input message, which is a raw memory from recorded by user, you will decide which agent to use to handle the memory.
@@ -76,6 +77,10 @@ async def process_raw_memory(raw_memory: MemoryDocument):
     try:
         result = await Runner.run(triage_agent, raw_memory.content, run_config=my_run_config)
         print(result.final_output)
+        # agno_agent = AgnoMemory.get_instance(raw_memory.user_id)
+        # result_agno = await agno_agent.process_user_message(raw_memory.content)
+        # pprint(f"AgnoMemory response: {result_agno.to_dict()}")
+        # pprint(f"memories: {agno_agent.get_memories()}")
         return result.final_output
     finally:
         # 清除上下文变量

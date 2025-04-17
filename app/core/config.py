@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # OpenAI settings for LLM
     OPENAI_API_KEY_FOR_LLM: Optional[str] = None
     OPENAI_API_BASE_FOR_LLM: Optional[str] = None
-    LLM_MODEL: str = "gpt-4o"
+    LLM_MODEL: str = "gpt-4.1"
 
     # Debug settings
     DEBUG: bool = False
