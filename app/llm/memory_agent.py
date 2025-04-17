@@ -1,16 +1,18 @@
 import asyncio
 from datetime import datetime
+from openai import AsyncOpenAI
 from pydantic import BaseModel
-from rich.pretty import pprint
-from agents import Agent, Runner, RunConfig
+# from rich.pretty import pprint
+from agents import Agent, Runner, RunConfig, Model, ModelProvider
 from agents.models.openai_provider import OpenAIProvider
 from app.core.config import settings
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
 from app.llm.project_memory_agent import get_project_memory_agent, clear_context as clear_project_context
 from app.llm.insight_memory_agent import get_insight_memory_agent, clear_context as clear_insight_context
 from app.db.elasticsearch.memory_repository import MemoryRepository
-from app.storage.file_storage import FileStorage
-from app.llm.agno_memory import AgnoMemory
+from agents import Agent, OpenAIChatCompletionsModel, Runner, function_tool, set_tracing_disabled
+# from app.storage.file_storage import FileStorage
+# from app.llm.agno_memory import AgnoMemory
 
 triage_agent_instructions = """
 You are a triage agent to handle a user input message, which is a raw memory from recorded by user, you will decide which agent to use to handle the memory.
@@ -56,9 +58,14 @@ async def get_project_information(user_id: str) -> str:
     
     projects = [f"<project>\n<project_name>{project.project_name}</project_name>\n<project_description>{project.project_description}</project_description>\n</project>" for project in projects]
     return "```<projects>\n" + "\n".join(projects) + "\n</projects>```" if projects else "No Projects Created"
-
+class CustomModelProvider(ModelProvider):
+    def get_model(self, model_name: str | None) -> Model:
+        client = AsyncOpenAI(base_url=settings.OPENAI_API_BASE_FOR_LLM, api_key=settings.OPENAI_API_KEY_FOR_LLM)
+        return OpenAIChatCompletionsModel(model=model_name or settings.LLM_MODEL, openai_client=client)
+    
 async def process_raw_memory(raw_memory: MemoryDocument):
     print(f"Processing raw memory for user: {raw_memory.user_id}, content: {raw_memory.content}")
+        
     insight_memory_agent = get_insight_memory_agent(raw_memory=raw_memory)
     project_memory_agent = get_project_memory_agent(raw_memory=raw_memory)
     triage_agent = Agent(
@@ -68,10 +75,15 @@ async def process_raw_memory(raw_memory: MemoryDocument):
         handoffs=[project_memory_agent, insight_memory_agent],
     )
 
-    my_model_provider = OpenAIProvider(
-        api_key=settings.OPENAI_API_KEY_FOR_LLM,
-        base_url=settings.OPENAI_API_BASE_FOR_LLM,
-    )
+    if not settings.OPENAI_RESPONSE_API:
+        set_tracing_disabled(disabled=True)
+        my_model_provider = CustomModelProvider()
+
+    else:
+        my_model_provider = OpenAIProvider(
+            api_key=settings.OPENAI_API_KEY_FOR_LLM,
+            base_url=settings.OPENAI_API_BASE_FOR_LLM,
+        )
     my_run_config = RunConfig(model=settings.LLM_MODEL, model_provider=my_model_provider)
 
     try:

@@ -23,28 +23,31 @@ insight_agent_instructions = """
  6. 如果旧记忆中没有相关的记忆，请使用create_memory工具来创建新的记忆。
  7. 如果旧记忆中有相关的记忆，并且和现在的信息不一致，请使用update_insight_memory工具来更新旧的记忆。
  8. 如果旧记忆中有相关的记忆，并且和现在的信息一致，请不做任何处理。
+ 9. 如果记忆没有带主语，请使用“用户”作为主语，使得记忆的含义更清晰。如果主语是“我”，也请将其替换为“用户”，使用第三人称。
+ 
 注意：
 记忆是有时间属性的，比如我说今天心情不好，指的是记录的当天。如果再收到另外一条记忆：“今天心情很好”，但是发生的时间不同的时候，这时候就应该再创建一条新的记忆。
 如果再同一个时间段收到更新，那么就应该更新之前的记忆。
 你再决定更新或者新建整理后的记忆的时候，要考虑之前的记忆的时间。
 
- 例子1：
- 用户输入：我今天吃了两个苹果。我爱吃苹果。我今天学习了python
- 你的输出：
-1. call search_memory("我今天吃了两个苹果") to find related memories
-2. call search_memory("我爱吃苹果") to find related memories
-3. call search_memory("我今天学习了python") to find related memories
-4. call create_memory("我今天吃了两个苹果") to create a new memory
-5. call create_memory("我爱吃苹果") to create a new memory
-6. call create_memory("我今天学习了python") to create a new memory
-
-例子2：
-假如之前的记忆说明用户对跑步不感兴趣。
-现在收到输入：我开始喜欢跑步了。
-你的输出：
-1. call search_memory("跑步") to find related memories
-2. call update_insight_memory("id_of_old_memory", "我开始喜欢跑步了") to update the memory
 """
+
+#  例子1：
+#  用户输入：我今天吃了两个苹果。我爱吃苹果。我今天学习了python
+#  你的输出：
+# 1. call search_memory("我今天吃了两个苹果") to find related memories
+# 2. call search_memory("我爱吃苹果") to find related memories
+# 3. call search_memory("我今天学习了python") to find related memories
+# 4. call create_memory("我今天吃了两个苹果") to create a new memory
+# 5. call create_memory("我爱吃苹果") to create a new memory
+# 6. call create_memory("我今天学习了python") to create a new memory
+
+# 例子2：
+# 假如之前的记忆说明用户对跑步不感兴趣。
+# 现在收到输入：我开始喜欢跑步了。
+# 你的输出：
+# 1. call search_memory("跑步") to find related memories
+# 2. call update_insight_memory("id_of_old_memory", "我开始喜欢跑步了") to update the memory
 
 async def search_memory(query: str):
     """

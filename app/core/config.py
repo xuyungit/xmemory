@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY_FOR_LLM: Optional[str] = None
     OPENAI_API_BASE_FOR_LLM: Optional[str] = None
     LLM_MODEL: str = "gpt-4.1"
-
+    OPENAI_RESPONSE_API: bool = True
     # Debug settings
     DEBUG: bool = False
 
