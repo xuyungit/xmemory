@@ -21,7 +21,8 @@ insight_agent_instructions = """
  4. 在决定如何处理记忆之前，你应该先提取原始记忆中的关键信息，然后根据这些关键信息来使用search_memory工具来查找相关的旧记忆。
  5. 根据旧记忆来决定如何处理新的记忆。
  6. 如果旧记忆中没有相关的记忆，请使用create_memory工具来创建新的记忆。
-
+ 7. 如果旧记忆中有相关的记忆，并且和现在的信息不一致，请使用update_insight_memory工具来更新旧的记忆。
+ 8. 如果旧记忆中有相关的记忆，并且和现在的信息一致，请不做任何处理。
 注意：
 记忆是有时间属性的，比如我说今天心情不好，指的是记录的当天。如果再收到另外一条记忆：“今天心情很好”，但是发生的时间不同的时候，这时候就应该再创建一条新的记忆。
 如果再同一个时间段收到更新，那么就应该更新之前的记忆。
@@ -36,6 +37,13 @@ insight_agent_instructions = """
 4. call create_memory("我今天吃了两个苹果") to create a new memory
 5. call create_memory("我爱吃苹果") to create a new memory
 6. call create_memory("我今天学习了python") to create a new memory
+
+例子2：
+假如之前的记忆说明用户对跑步不感兴趣。
+现在收到输入：我开始喜欢跑步了。
+你的输出：
+1. call search_memory("跑步") to find related memories
+2. call update_insight_memory("id_of_old_memory", "我开始喜欢跑步了") to update the memory
 """
 
 async def search_memory(query: str):
@@ -52,7 +60,7 @@ async def search_memory(query: str):
     raw_memory = raw_memory_context.get()
     print(f"search_memory is called with raw_memory: {raw_memory.user_id}, query: {query}")
     repo = MemoryRepository()
-    memory_docs = await repo.search_by_similarity(query, raw_memory.user_id, raw_memory.tags, size=10)
+    memory_docs = await repo.search_by_similarity(query, raw_memory.user_id, raw_memory.tags, size=10, memory_type=MemoryType.INSIGHT)
     memory_list = [f"@{memory.created_at}: {memory.content}" for memory in memory_docs if memory.memory_type == MemoryType.INSIGHT]
     # make list of <memory>
     memory_list = [f"<memory>\n{memory}\n</memory>" for memory in memory_list]
@@ -102,6 +110,29 @@ async def create_memory(memory_to_record: str):
 
     return f"success to create memory, id is {memory_id}"
 
+async def update_memory(memory_id: str, new_content: str) -> str:
+    """
+    更新insight记忆的工具
+    当你发现用户的偏好和之前的记忆发生变化时，或者用户请求更新某些内容时，主动调用此工具。
+    Args:
+        memory_id (str): 需要更新的记忆的ID
+        new_content (str): 旧的记忆将会被更新为新的内容
+    Returns:
+        str: 更新的结果
+    注意：
+    不要把时间信息记录到new_content中，我们有时间戳来记录记忆的创建和更新时间。
+    """
+
+    repo = MemoryRepository()
+    memory = await repo.get_memory(memory_id)
+    
+    if not memory:
+        return f"Memory with ID {memory_id} not found."
+
+    memory.content = new_content
+    repo.update_memory(memory)
+
+    return f"Memory with ID {memory_id} updated successfully."
 
 async def update_insight_memory(raw_memory: MemoryDocument):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -117,7 +148,7 @@ async def update_insight_memory(raw_memory: MemoryDocument):
         memory_agent = Agent(
             name="Memory Agent",
             instructions=instructions,
-            tools=[function_tool(create_memory), function_tool(search_memory)],
+            tools=[function_tool(create_memory), function_tool(search_memory), function_tool(update_memory)],
         )
         my_model_provider = OpenAIProvider(
             api_key=settings.OPENAI_API_KEY_FOR_LLM,
@@ -156,7 +187,8 @@ def get_insight_memory_agent(raw_memory: MemoryDocument) -> Agent:
         "注意重要：本代理不处理关于计划、任务、行动项的记忆，应该使用项目记忆代理来处理。",
         tools=[
             function_tool(search_memory),
-            function_tool(create_memory)
+            function_tool(create_memory),
+            function_tool(update_memory)
         ],
     )
 
