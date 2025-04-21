@@ -16,7 +16,7 @@ import sys
 from typing import List, Optional
 from datetime import datetime
 import pytz
-
+from dotenv import load_dotenv
 from app.db.elasticsearch.memory_repository import MemoryRepository
 from app.db.elasticsearch.models import MemoryDocument, MemoryType
 from app.llm.memory_agent import process_raw_memory
@@ -131,6 +131,7 @@ def signal_handler(sig, frame):
     is_running = False
 
 def main():
+    load_dotenv()  # 加载环境变量
     """Worker主函数"""
     # 注册信号处理器
     signal.signal(signal.SIGINT, signal_handler)

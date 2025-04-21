@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     # Debug settings
     DEBUG: bool = False
 
+    # OpenAI key for trace
+    OPENAI_API_KEY: Optional[str] = None
+    
     # Authentication settings
     AUTH_USERNAME: str = os.getenv("AUTH_USERNAME", "admin")
     AUTH_PASSWORD: str = os.getenv("AUTH_PASSWORD", "admin")
