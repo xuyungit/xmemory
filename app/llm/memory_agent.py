@@ -71,8 +71,9 @@ async def process_raw_memory(raw_memory: MemoryDocument):
     triage_agent = Agent(
         name="Triage Agent",
         instructions=triage_agent_instructions_cn + "\n" + await get_project_information(raw_memory.user_id),
-        handoff_description="You are a triage agent, you will decide which agent to use. Try to use the most appropriate agent to handle the memory.",
-        handoffs=[project_memory_agent, insight_memory_agent],
+        tools=[insight_memory_agent, project_memory_agent],
+        # handoff_description="You are a triage agent, you will decide which agent to use. Try to use the most appropriate agent to handle the memory.",
+        # handoffs=[project_memory_agent, insight_memory_agent],
     )
 
     if not settings.OPENAI_RESPONSE_API:

@@ -221,7 +221,7 @@ def get_project_memory_agent(raw_memory: MemoryDocument) -> Agent:
     raw_memory_context.set(raw_memory)
     
     instructions = f"当前时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}\n" + project_memory_agent_instructions_cn 
-    return Agent(
+    agent = Agent(
         name="Project Memory Agent",
         instructions=instructions,
         # handoff_description="Special Agent for project memory management, such as creating, updating, and listing projects and tasks.",
@@ -240,6 +240,16 @@ def get_project_memory_agent(raw_memory: MemoryDocument) -> Agent:
             function_tool(update_task)
         ],
     )
+    tool = agent.as_tool(
+        tool_name="project_memory_agent",
+        tool_description="处理与具体项目、任务、计划或行动项相关的内容"
+        "例子：为项目xmemory增加一个任务：实现项目的任务管理功能（）"
+        "下面的例子应该使用project_memory_agent来处理："
+        "为项目xmemory增加一个任务：实现项目的任务管理功能；"
+        "我今天完成了一体机项目的需求分析文档编写；"
+        "完成了周报的编写",
+    )
+    return tool
 
 def clear_context():
     """

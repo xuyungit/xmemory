@@ -176,7 +176,7 @@ def get_insight_memory_agent(raw_memory: MemoryDocument) -> Agent:
     raw_memory_context.set(raw_memory)
     instructions = f"当前时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}\n" + insight_agent_instructions 
 
-    return Agent(
+    agent = Agent(
         name="Insight Memory Agent",
         instructions=instructions,
         # handoff_description="Special Agent for process general purpose memory, such as insights, preference, profiles and facts.",
@@ -194,6 +194,12 @@ def get_insight_memory_agent(raw_memory: MemoryDocument) -> Agent:
             function_tool(update_memory)
         ],
     )
+    tool = agent.as_tool(
+        tool_name="insight_memory_agent",
+        tool_description="A tool to handle insight memory.",
+    )
+    return tool
+    # return agent
 
 def clear_context():
     """
