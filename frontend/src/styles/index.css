@@ -5,6 +5,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+  overflow-x: hidden;
 }
 
 code {
@@ -14,4 +17,26 @@ code {
 
 #root {
   min-height: 100vh;
-} 
+}
+
+/* 确保表单元素在移动设备上可用 */
+input, select, textarea, button {
+  max-width: 100%;
+  font-size: 16px; /* 防止iOS自动缩放 */
+}
+
+/* 移动设备适配 */
+@media (max-width: 768px) {
+  .ant-form-item-label {
+    padding-bottom: 4px;
+  }
+  
+  .ant-card {
+    margin-bottom: 12px;
+  }
+  
+  .ant-modal {
+    max-width: 90%;
+    margin: 0 auto;
+  }
+}

@@ -39,23 +39,48 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
   return (
     <Header style={{ 
       background: '#fff', 
-      padding: '0 16px',
+      padding: '0 10px',
       display: 'flex',
-      justifyContent: 'space-between',
+      flexDirection: 'column',
       alignItems: 'center',
       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-      height: '48px',
-      lineHeight: '48px',
+      height: 'auto',
       position: 'sticky',
       top: 0,
       zIndex: 1000
     }}>
-      {/* 左侧导航菜单 */}
-      <Space wrap style={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start', overflow: 'auto' }}>
+      {/* 中间标题 */}
+      {title && (
+        <Title level={4} style={{ margin: '8px 0', textAlign: 'center' }}>
+          {title}
+        </Title>
+      )}
+
+      {/* 导航菜单 - 移动端优化 */}
+      <div style={{ 
+        width: '100%', 
+        display: 'flex', 
+        flexWrap: 'nowrap', 
+        overflowX: 'auto',
+        paddingBottom: '8px',
+        margin: '0 -5px',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
+      }}>
+        <style>{`
+          /* 隐藏滚动条但保留功能 */
+          div::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+        
         <Button 
           icon={<HomeOutlined />} 
           type={getCurrentPath() === 'home' ? 'primary' : 'default'}
           onClick={() => navigate('/')}
+          style={{ margin: '0 5px', flex: '0 0 auto', whiteSpace: 'nowrap' }}
+          size="middle"
         >
           首页
         </Button>
@@ -63,6 +88,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
           icon={<UnorderedListOutlined />} 
           type={getCurrentPath() === 'memories' ? 'primary' : 'default'}
           onClick={() => navigate('/memories')}
+          style={{ margin: '0 5px', flex: '0 0 auto', whiteSpace: 'nowrap' }}
+          size="middle"
         >
           记忆管理
         </Button>
@@ -70,6 +97,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
           icon={<SearchOutlined />} 
           type={getCurrentPath() === 'search' ? 'primary' : 'default'}
           onClick={() => navigate('/search')}
+          style={{ margin: '0 5px', flex: '0 0 auto', whiteSpace: 'nowrap' }}
+          size="middle"
         >
           记忆搜索
         </Button>
@@ -77,24 +106,20 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
           icon={<ProjectOutlined />} 
           type={getCurrentPath() === 'projects' ? 'primary' : 'default'}
           onClick={() => navigate('/projects')}
+          style={{ margin: '0 5px', flex: '0 0 auto', whiteSpace: 'nowrap' }}
+          size="middle"
         >
           项目管理
         </Button>
-      </Space>
-
-      {/* 中间标题 */}
-      {title && (
-        <Title level={4} style={{ margin: 0, textAlign: 'center', flexShrink: 0 }}>
-          {title}
-        </Title>
-      )}
+      </div>
       
       {/* 右侧登出按钮 */}
       <Button 
         type="text" 
         icon={<LogoutOutlined />} 
         onClick={handleLogout}
-        style={{ flexShrink: 0 }}
+        style={{ position: 'absolute', right: '10px', top: title ? '8px' : '50%', transform: title ? 'none' : 'translateY(-50%)' }}
+        size="middle"
       >
         退出登录
       </Button>
