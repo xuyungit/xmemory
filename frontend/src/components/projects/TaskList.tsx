@@ -293,9 +293,6 @@ const TaskList: React.FC<TaskListProps> = ({ projectId }) => {
           <Tabs.TabPane tab="已完成" key="3">
             {renderTaskList('Done')}
           </Tabs.TabPane>
-          <Tabs.TabPane tab="已删除" key="4">
-            {renderTaskList('Deleted')}
-          </Tabs.TabPane>
         </Tabs>
       )}
       
