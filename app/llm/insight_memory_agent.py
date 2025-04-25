@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 from datetime import datetime
 import contextvars
 
@@ -31,23 +32,123 @@ insight_agent_instructions = """
 你再决定更新或者新建整理后的记忆的时候，要考虑之前的记忆的时间。
 
 """
+insight_agent_instructions = '''
+## Role and Objective
 
-#  例子1：
-#  用户输入：我今天吃了两个苹果。我爱吃苹果。我今天学习了python
-#  你的输出：
-# 1. call search_memory("我今天吃了两个苹果") to find related memories
-# 2. call search_memory("我爱吃苹果") to find related memories
-# 3. call search_memory("我今天学习了python") to find related memories
-# 4. call create_memory("我今天吃了两个苹果") to create a new memory
-# 5. call create_memory("我爱吃苹果") to create a new memory
-# 6. call create_memory("我今天学习了python") to create a new memory
+You are User-Memory Management Assistant. Your goal is to transform each raw user-supplied memory into concise, well-structured memories, decide whether to create, update, or ignore entries in the long-term store, and invoke the correct memory-management tool for that action.
 
-# 例子2：
-# 假如之前的记忆说明用户对跑步不感兴趣。
-# 现在收到输入：我开始喜欢跑步了。
-# 你的输出：
-# 1. call search_memory("跑步") to find related memories
-# 2. call update_insight_memory("id_of_old_memory", "我开始喜欢跑步了") to update the memory
+---
+
+## Instructions
+
+1.	Preserve Language
+1.1 Record each memory in the same language the user used. Do not translate or paraphrase beyond necessary clarifications.
+
+2.	Clarify the Subject
+2.1 If the memory lacks an explicit subject, prepend "用户…" (the user) as the subject.
+2.2 If the subject is "我/I", replace it with "用户". Use third-person throughout the stored memory.
+
+3.	Separate Unrelated Memories
+3.1 If a single input contains multiple unrelated memories, split them into independent entries and handle each one individually.
+
+4.	Classify by Nature
+4.1 Label each memory as either Factual (objective facts, dates, places, numbers, achievements, etc.) or Preferential (likes, dislikes, opinions, feelings, habits).
+4.2 Store factual and preferential memories in separate tool calls even when extracted from the same input.
+
+5.	Extraction & Query Process
+5.1 Extract the key information from the raw input (entities, actions, dates, sentiments).
+5.2 Immediately call search_memory with that key information to find potentially related existing memories.
+
+6.	Decision Logic
+6.1 No matching memory found → use create_memory to store the new memory.
+6.2 Matching memory found, content conflicts → use update_insight_memory to overwrite or merge, keeping the newer information.
+6.3 Matching memory found, content identical → do nothing.
+
+7.	Handle Time Sensitively
+7.1 Treat each memory as time-stamped with the moment of user input.
+7.2 If the same topic recurs but pertains to a different time period (e.g., “今天心情不好” vs. a later “今天心情很好”), treat them as distinct and create a new memory.
+7.3 If an update clearly refers to the same time period, update the prior entry instead of creating a new one.
+
+8.	Tool Invocation Format
+8.1 After reasoning, output exactly one tool call each time or the string no_action to end the process.
+
+---
+
+Sub-categories for more detailed instructions
+
+A. Language & Subject Handling
+- Make memories concise and clear, make it easy to search in the future.
+- Never switch language unless the user does.
+
+B. Memory Categorization
+- Factual examples: 出生年份、工作职位、孩子出生日期、今日心情。
+- Preferential examples: 喜欢的音乐、常去的健身房。
+
+C. Conflict Resolution
+- "冲突" = any difference in fact or preference value (e.g., old: "喜欢咖啡", new: "不喜欢咖啡"), update memory to use the newer information.
+- Merge only when both memories can coexist logically (e.g., different time periods).
+
+---
+
+Reasoning Steps (internal, not output)
+1. Parse input → extract key entities, actions, dates.
+2. Query memory store with search_memory.
+3. Compare results → determine consistency, conflict, or absence.
+4. Choose action: create / update / no_action.
+5. Compose tool call.
+6. Check the tool call Output
+7. Loopback to step 2 if needed or end the process.
+
+---
+
+Output Format (external)
+One of the following:
+- A single tool-call JSON block
+    - The literal string no_action.
+	- Do not output the extracted key information or any extra commentary.
+
+---
+
+Examples
+
+Example 1
+
+Raw input:
+
+我今天迟到了，心情不好，喝的咖啡太苦了。
+
+1.	Extracted keys → "心情", “咖啡”.
+2.	search_memory returns no related entries.
+3.	Decision → create two new preferential memories.
+4.	Output:
+
+{
+  "tool": "create_memory",
+  "arguments": {
+    "memories": [
+      "用户今天心情不好。"
+      "用户今天迟到了。"
+    ],
+    "type": "Factual"
+  }
+}
+
+{
+  "tool": "create_memory",
+  "arguments": {
+    "memories": [
+      "用户不喜欢喝太苦的咖啡。"
+    ],
+    "type": "Preferential"
+  }
+}
+
+---
+
+Final instructions and prompt to think step by step
+
+When processing each user input, pause and silently run the Reasoning Steps above. Only after that internal deliberation should you emit either a tool call or no_action. Think step by step before you answer.
+'''
 
 async def search_memory(query: str):
     """
@@ -73,18 +174,28 @@ async def search_memory(query: str):
     print(ret)
     return ret
 
-async def create_memory(memory_to_record: str):
+async def create_memory(memory_to_record: List[str], memory_category: str) -> str:
     """
     A tool to create a new memory.
-    Proactively call this tool when you:
-    1. Identify a new USER preference.
-    2. Receive an explicit USER request to remember something or otherwise alter your behavior.
-    3. Are working and want to record important context.
-    4. Got new information that might be useful to remember.
-    5. Record what user did and what user learned.
-    IMPORTANT:
-    1. don't record date and time in parameter of this tool
+    Attention:
+    - Do not record date and time in memory_to_record parameter of this tool
+    Args:
+        memory_to_record (List[str]): memory or memories to record
+        memory_category (str): could be any of "Factual", "Preferential"
+    Returns:
+        str: success message
     """
+    # """
+    # A tool to create a new memory.
+    # Proactively call this tool when you:
+    # 1. Identify a new USER preference.
+    # 2. Receive an explicit USER request to remember something or otherwise alter your behavior.
+    # 3. Are working and want to record important context.
+    # 4. Got new information that might be useful to remember.
+    # 5. Record what user did and what user learned.
+    # IMPORTANT:
+    # 1. don't record date and time in parameter of this tool
+    # """
 
     # 从上下文变量获取 user_id
     # 在异步多用户场景中，每个用户的请求都有自己的上下文
@@ -92,40 +203,51 @@ async def create_memory(memory_to_record: str):
     raw_memory = raw_memory_context.get()
     print(f"create_memory is called with raw_memory: {raw_memory.user_id}, memory: {memory_to_record}")
 
-    new_memory = MemoryDocument(
-        user_id=raw_memory.user_id,
-        content=memory_to_record,
-        memory_type=MemoryType.INSIGHT,
-        tags=raw_memory.tags,
-        created_at=raw_memory.created_at,
-        updated_at=raw_memory.updated_at,
-        processed=True
-    )
     repo = MemoryRepository()
-    memory_id = await repo.create_memory(new_memory)
+    memory_ids = []
+    for memory in memory_to_record:
+        new_memory = MemoryDocument(
+            user_id=raw_memory.user_id,
+            title=memory_category,
+            content=memory,
+            memory_type=MemoryType.INSIGHT,
+            tags=raw_memory.tags,
+            created_at=raw_memory.created_at,
+            updated_at=raw_memory.updated_at,
+            processed=True
+        )
+        memory_id = await repo.create_memory(new_memory)
+        # Save to local file storage
+        memory_data = new_memory.to_dict()
+        memory_data["_id"] = memory_id  # Add the ID to the data
+        file_storage = FileStorage()
 
-    # Save to local file storage
-    memory_data = new_memory.to_dict()
-    memory_data["_id"] = memory_id  # Add the ID to the data
-    file_storage = FileStorage()
-
-    file_storage.save_memory(memory_id, memory_data)
-
-    return f"success to create memory, id is {memory_id}"
+        file_storage.save_memory(memory_id, memory_data)
+        memory_ids.append(memory_id)
+    print(f"Memory created with IDs: {', '.join(memory_ids)}")
+    return f"success to create memory, ids are {', '.join(memory_ids)}"
 
 async def update_memory(memory_id: str, new_content: str) -> str:
-    """
-    更新insight记忆的工具
-    当你发现用户的偏好和之前的记忆发生变化时，或者用户请求更新某些内容时，主动调用此工具。
-    Args:
-        memory_id (str): 需要更新的记忆的ID
-        new_content (str): 旧的记忆将会被更新为新的内容
-    Returns:
-        str: 更新的结果
-    注意：
-    不要把时间信息记录到new_content中，我们有时间戳来记录记忆的创建和更新时间。
-    """
+    # """
+    # 更新insight记忆的工具
+    # 当你发现用户的偏好和之前的记忆发生变化时，或者用户请求更新某些内容时，主动调用此工具。
+    # Args:
+    #     memory_id (str): 需要更新的记忆的ID
+    #     new_content (str): 旧的记忆将会被更新为新的内容
+    # Returns:
+    #     str: 更新的结果
+    # 注意：
+    # 不要把时间信息记录到new_content中，我们有时间戳来记录记忆的创建和更新时间。
+    # """
 
+    """
+    A tool to update an existing memory.
+    Args:
+        memory_id (str): The ID of the memory to update
+        new_content (str): The new content to update the memory with
+    Returns:
+        str: Success message
+    """
     repo = MemoryRepository()
     memory = await repo.get_memory(memory_id)
     
@@ -133,7 +255,7 @@ async def update_memory(memory_id: str, new_content: str) -> str:
         return f"Memory with ID {memory_id} not found."
 
     memory.content = new_content
-    repo.update_memory(memory)
+    await repo.update_memory(memory)
 
     return f"Memory with ID {memory_id} updated successfully."
 

@@ -224,6 +224,7 @@ async def list_memories(
         )
         
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/search", response_model=MemoryListResponse)
