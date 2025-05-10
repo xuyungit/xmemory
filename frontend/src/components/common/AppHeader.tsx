@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Button, Space, Menu, Typography } from 'antd';
+import { Layout, Button, Menu } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   HomeOutlined, 
@@ -11,13 +11,8 @@ import {
 import { logout } from '../../services/authService';
 
 const { Header } = Layout;
-const { Title } = Typography;
 
-interface AppHeaderProps {
-  title?: string; // 可选标题，显示在中间
-}
-
-const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
+const AppHeader: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -25,9 +20,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
   const getCurrentPath = () => {
     const path = location.pathname;
     if (path === '/') return 'home';
-    if (path.includes('/memories')) return 'memories';
-    if (path.includes('/search')) return 'search';
-    if (path.includes('/projects')) return 'projects';
+    if (path.startsWith('/memories')) return 'memories';
+    if (path.startsWith('/search')) return 'search';
+    if (path.startsWith('/projects')) return 'projects';
     return '';
   };
 
@@ -36,40 +31,45 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
     navigate('/login');
   };
 
+  // Determine dynamic button texts
+  let memoriesButtonText = "记忆管理";
+  if (location.pathname === '/memories/add' || location.pathname === '/memories/new') {
+    memoriesButtonText = "创建记忆";
+  } else if (location.pathname.startsWith('/memories/edit/')) {
+    memoriesButtonText = "编辑记忆";
+  }
+
+  let projectsButtonText = "项目管理";
+  if (location.pathname === '/projects/add' || location.pathname === '/projects/new') {
+    projectsButtonText = "创建项目";
+  } else if (location.pathname.startsWith('/projects/edit/')) {
+    projectsButtonText = "编辑项目";
+  }
+
   return (
     <Header style={{ 
       background: '#fff', 
-      padding: '0 10px',
+      padding: '10px 10px', // Vertical and horizontal padding
       display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
+      alignItems: 'center', // Vertically align all items in the header
       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-      height: 'auto',
+      height: 'auto', // Or a fixed height like 56px or 64px if preferred
       position: 'sticky',
       top: 0,
       zIndex: 1000
     }}>
-      {/* 中间标题 */}
-      {title && (
-        <Title level={4} style={{ margin: '8px 0', textAlign: 'center' }}>
-          {title}
-        </Title>
-      )}
-
-      {/* 导航菜单 - 移动端优化 */}
+      {/* Scrollable Navigation Menu */}
       <div style={{ 
-        width: '100%', 
         display: 'flex', 
-        flexWrap: 'nowrap', 
+        flexWrap: 'nowrap', // Ensure buttons stay in a line
         overflowX: 'auto',
-        paddingBottom: '8px',
-        margin: '0 -5px',
+        flexShrink: 0, // Prevent nav container from shrinking; content will scroll
         WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none'
+        scrollbarWidth: 'none', // Hide scrollbar for Firefox
+        msOverflowStyle: 'none'  // Hide scrollbar for IE/Edge
       }}>
         <style>{`
-          /* 隐藏滚动条但保留功能 */
+          /* Hide scrollbar for Webkit browsers */
           div::-webkit-scrollbar {
             display: none;
           }
@@ -91,7 +91,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
           style={{ margin: '0 5px', flex: '0 0 auto', whiteSpace: 'nowrap' }}
           size="middle"
         >
-          记忆管理
+          {memoriesButtonText}
         </Button>
         <Button 
           icon={<SearchOutlined />} 
@@ -109,16 +109,21 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
           style={{ margin: '0 5px', flex: '0 0 auto', whiteSpace: 'nowrap' }}
           size="middle"
         >
-          项目管理
+          {projectsButtonText}
         </Button>
       </div>
+
+      {/* Spacer to push logout button to the right */}
+      <div style={{ flexGrow: 1 }} />
       
-      {/* 右侧登出按钮 */}
+      {/* Logout Button */}
       <Button 
         type="text" 
         icon={<LogoutOutlined />} 
         onClick={handleLogout}
-        style={{ position: 'absolute', right: '10px', top: title ? '8px' : '50%', transform: title ? 'none' : 'translateY(-50%)' }}
+        style={{ 
+          flexShrink: 0 // Prevent logout button from shrinking
+        }}
         size="middle"
       >
         退出登录

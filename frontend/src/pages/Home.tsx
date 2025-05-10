@@ -1,15 +1,17 @@
 import React from 'react';
-import { Layout } from 'antd';
+import { Layout, Typography } from 'antd';
 import CreateMemory from '../components/CreateMemory';
 import AppHeader from '../components/common/AppHeader';
 
 const { Content } = Layout;
+const { Title } = Typography;
 
 const Home: React.FC = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <AppHeader title="创建记忆" />
-      <Content style={{ padding: '16px', display: 'flex', justifyContent: 'center' }}>
+      <AppHeader />
+      <Content style={{ padding: '16px', textAlign: 'center' }}>
+        <Title level={2}>欢迎来到记忆管理系统</Title>
         <CreateMemory />
       </Content>
     </Layout>
