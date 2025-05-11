@@ -63,7 +63,6 @@ const AppHeader: React.FC = () => {
         display: 'flex', 
         flexWrap: 'nowrap', // Ensure buttons stay in a line
         overflowX: 'auto',
-        flexShrink: 0, // Prevent nav container from shrinking; content will scroll
         WebkitOverflowScrolling: 'touch',
         scrollbarWidth: 'none', // Hide scrollbar for Firefox
         msOverflowStyle: 'none'  // Hide scrollbar for IE/Edge
