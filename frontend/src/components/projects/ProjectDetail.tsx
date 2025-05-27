@@ -147,7 +147,12 @@ const ProjectDetail: React.FC = () => {
       {/* 项目详情卡片 */}
       <Card>
         <Title level={2}>{project.title || '未命名项目'}</Title>
-        <Paragraph style={{ whiteSpace: 'pre-line' }}>
+        <Paragraph style={{ 
+          whiteSpace: 'pre-line',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+          maxWidth: '100%'
+        }}>
           {project.content}
         </Paragraph>
         <div style={{ fontSize: '14px', color: '#666' }}>

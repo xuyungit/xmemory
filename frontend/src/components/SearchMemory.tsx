@@ -102,7 +102,10 @@ const SearchMemory: React.FC = () => {
                 extra={<small>{memory.user_id}</small>}
                 style={{ marginBottom: '16px' }} // 添加卡片间的垂直间距
               >
-                <Paragraph ellipsis={{ rows: 3, expandable: true, symbol: '展开' }}>
+                <Paragraph ellipsis={{ rows: 3, expandable: true, symbol: '展开' }} style={{
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word'
+                }}>
                   {memory.content}
                 </Paragraph>
                 <small style={{ color: '#999' }}>

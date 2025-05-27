@@ -137,7 +137,11 @@ const ProjectList: React.FC = () => {
                 >
                   <Paragraph 
                     ellipsis={{ rows: 3, expandable: false }} 
-                    style={{ marginBottom: 0 }}
+                    style={{ 
+                      marginBottom: 0,
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word'
+                    }}
                   >
                     {project.content}
                   </Paragraph>

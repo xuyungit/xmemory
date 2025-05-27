@@ -36,7 +36,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => (
           {task.summary}
         </Tag>
       )}
-      <div style={{ whiteSpace: 'pre-line' }}>{task.content}</div>
+      <div style={{ 
+        whiteSpace: 'pre-line',
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
+        maxWidth: '100%',
+        overflow: 'hidden'
+      }}>{task.content}</div>
     </div>
     <div style={{ 
       marginTop: 16, 

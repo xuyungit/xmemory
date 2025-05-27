@@ -25,6 +25,21 @@ input, select, textarea, button {
   font-size: 16px; /* 防止iOS自动缩放 */
 }
 
+/* 长文字处理 - 防止文字溢出容器 */
+.long-text-wrap, .ant-typography, .ant-card-body {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* 特殊处理 URL 和长链接 */
+.url-text {
+  word-break: break-all;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  display: inline-block;
+}
+
 /* 移动设备适配 */
 @media (max-width: 768px) {
   .ant-form-item-label {
